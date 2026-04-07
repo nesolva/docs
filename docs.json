@@ -3,9 +3,9 @@
   "theme": "mint",
   "name": "Nesolva | Docs",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#133e8b",
+    "light": "#3b649b",
+    "dark": "#052255"
   },
   "favicon": "/favicon.svg",
   "navigation": {
