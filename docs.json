@@ -84,8 +84,8 @@
     }
   },
   "logo": {
-    "light": "/images/largens-w.png",
-    "dark": "/images/largens.png"
+    "light": "/images/largens.png",
+    "dark": "/images/largens-w.png"
   },
   "navbar": {
     "links": [
