@@ -3,3 +3,86 @@ title: "Installation"
 description: "Install ailita-library and configure Tailwind CSS in your React or Next.js app."
 icon: "download"
 ---
+
+## Install
+
+<Steps>
+  <Step title="Install the package">
+    ```bash
+    npm install ailita-library
+    ```
+
+    This installs the library and all of its bundled dependencies. Peer dependencies
+    React 18+ and react-dom 18+ must already be present in your project.
+  </Step>
+
+  <Step title="Add styles">
+    Choose how to include the compiled Tailwind CSS from the library.
+
+    <Tabs>
+      <Tab title="Import compiled CSS (recommended)">
+        ```tsx
+        // app/layout.tsx (Next.js) or src/main.tsx (Vite)
+        import 'ailita-library/styles'
+        ```
+
+        <Tip>
+          This is the reliable approach. Use the Tailwind content path only if you consume
+          the library from source (e.g., a monorepo where you build the library locally).
+        </Tip>
+      </Tab>
+      <Tab title="Tailwind content path">
+        ```js
+        // tailwind.config.js
+        module.exports = {
+          content: [
+            './src/**/*.{js,ts,jsx,tsx}',
+            './node_modules/ailita-library/dist/**/*.js'
+          ]
+        }
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Configure for Next.js (App Router only)">
+    ```js
+    // next.config.js
+    const nextConfig = {
+      transpilePackages: ['ailita-library'],
+    }
+    export default nextConfig
+    ```
+
+    <Info>
+      Skip this step for Vite or Create React App. Only required for Next.js App Router.
+    </Info>
+  </Step>
+</Steps>
+
+## Peer dependencies
+
+The library requires the following peer dependencies to be installed in your project:
+
+| Package | Required version |
+|---------|-----------------|
+| `react` | `>=18` |
+| `react-dom` | `>=18` |
+
+The library bundles `axios`, `react-hook-form`, `@hookform/resolvers`, and `zod` as
+dependencies — you do not need to install them separately.
+
+## What gets installed
+
+Build output in `dist/`:
+
+- `index.js` — ESM module
+- `index.cjs` — CommonJS module
+- `index.d.ts` / `index.d.cts` — TypeScript types
+- `ailita-library.css` — compiled Tailwind styles (imported via `ailita-library/styles`)
+
+## Next steps
+
+<Card title="Configure AilitaProvider" icon="plug" href="/ailita/provider-setup" horizontal>
+  Wrap your app and connect to your tenant.
+</Card>
