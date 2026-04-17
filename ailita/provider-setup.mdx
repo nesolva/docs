@@ -4,3 +4,162 @@ description: "Wrap your app with AilitaProvider to connect to your tenant and en
 sidebarTitle: "Provider setup"
 icon: "plug"
 ---
+
+<Warning>
+Always provide `onSessionExpired`. Without it, users whose refresh token expires will
+be silently stuck — no redirect, no error, just a broken app state.
+</Warning>
+
+## Quick setup
+
+Wrap your app (or its authenticated subtree) with `AilitaProvider`. It handles tenant
+discovery, theme injection, and token refresh automatically.
+
+<CodeGroup>
+
+```tsx Next.js App Router
+// app/providers.tsx
+// 'use client' is required — AilitaProvider uses React context and useEffect,
+// which are only available in Client Components.
+'use client'
+
+import { AilitaProvider } from 'ailita-library'
+import 'ailita-library/styles'
+import { useRouter } from 'next/navigation'
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
+
+  return (
+    <AilitaProvider
+      slug="your-tenant"
+      appId="your-app-id"
+      baseUrl="https://api.yourdomain.com/api/v1"
+      onSessionExpired={() => router.push('/login')}
+      loadingFallback={<div>Loading...</div>}
+      errorFallback={<div>Failed to load tenant. Please refresh.</div>}
+    >
+      {children}
+    </AilitaProvider>
+  )
+}
+```
+
+```tsx React Router
+// src/Providers.tsx
+import { AilitaProvider } from 'ailita-library'
+import 'ailita-library/styles'
+import { useNavigate } from 'react-router-dom'
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate()
+
+  return (
+    <AilitaProvider
+      slug="your-tenant"
+      appId="your-app-id"
+      baseUrl="https://api.yourdomain.com/api/v1"
+      onSessionExpired={() => navigate('/login', { replace: true })}
+      loadingFallback={<div>Loading...</div>}
+      errorFallback={<div>Failed to load tenant. Please refresh.</div>}
+    >
+      {children}
+    </AilitaProvider>
+  )
+}
+```
+
+</CodeGroup>
+
+## Props
+
+<ParamField body="slug" type="string" required>
+  Merchant subdomain slug (e.g. `"sanfernando"`). Used in `GET /auth/discovery?slug=` on mount.
+  Changing this prop re-runs discovery.
+</ParamField>
+
+<ParamField body="appId" type="string" required>
+  Application identifier (e.g. `"colegios"`). Passed as a `useEffect` dependency alongside
+  `slug` and `baseUrl` — changing any of these three re-runs discovery.
+</ParamField>
+
+<ParamField body="baseUrl" type="string" required>
+  Base URL of the API, e.g. `https://api.yourdomain.com/api/v1`. Set once before discovery
+  runs. All subsequent API calls use this base URL.
+</ParamField>
+
+<ParamField body="onSessionExpired" type="() => void">
+  Called when the refresh token is invalid and tokens are cleared. Redirect to `/login` here.
+  **Treat as required** — without it, users silently lose their session with no recovery path.
+  The 401 refresh queue in `client.ts` fires this callback after a failed refresh attempt.
+</ParamField>
+
+<ParamField body="loadingFallback" type="ReactNode" default="null">
+  Rendered while discovery is in progress. Defaults to `null` (blank screen). Provide a
+  spinner or skeleton to avoid a content flash on mount.
+</ParamField>
+
+<ParamField body="errorFallback" type="ReactNode" default="null">
+  Rendered if discovery fails (network error, unknown slug). Defaults to `null`. Provide
+  an error state that prompts the user to refresh or contact support.
+</ParamField>
+
+## How discovery works
+
+On mount, `AilitaProvider` runs the following sequence:
+
+1. Sets the Axios base URL to your `baseUrl` prop
+2. Calls `GET /auth/discovery?slug={slug}` to fetch tenant configuration
+3. Receives tenant data: name, colors, `loginMode`, `signupMode`, `publicApiKey`
+4. Injects `X-App-ID` and `X-Mid-Key` headers into all subsequent API requests via an Axios interceptor
+
+<Note>
+The `appId` prop is used as a `useEffect` dependency to re-run discovery if it changes.
+The actual `X-App-ID` header value sent to the backend comes from `data.app` in the discovery
+response — not from the prop directly. If your `slug` is correct, this is transparent.
+It only matters if you inspect network traffic and see a different value than your prop.
+</Note>
+
+## Internal composition
+
+`AilitaProvider` composes three layers internally. Consumers never need to instantiate
+`ThemeProvider` or `AuthProvider` directly.
+
+```
+AilitaProvider           -- discovery + tenant config
+  ThemeProvider          -- CSS variables (--color-primary, --color-secondary)
+    AuthProvider         -- auth state + silent token refresh on mount
+      {children}
+```
+
+## loginMode and signupMode
+
+Your tenant's `loginMode` and `signupMode` are returned by the discovery endpoint and
+control which UI flows `LoginForm` and `SignupForm` render.
+
+### loginMode
+
+| Value | Behavior |
+|-------|----------|
+| `PASSWORD` | Standard email + password login |
+| `OTP_EMAIL` | Login via one-time code sent to email (no password) |
+| `PASSWORD_OR_OTP_EMAIL` | User chooses between password or email OTP |
+
+### signupMode
+
+| Value | Behavior |
+|-------|----------|
+| `OPEN` | Anyone can register |
+| `INVITATION_ONLY` | Registration requires an invitation link |
+
+<Note>
+These values are returned by the discovery endpoint and set automatically. Your tenant's
+`loginMode` and `signupMode` are configured in the ailita backend admin panel — you do not
+need to pass them as props.
+</Note>
+
+## Next steps
+
+<Card title="Protect routes with AuthGuard" icon="shield" href="/ailita/auth-guard" horizontal>
+  Require authentication or specific roles before rendering protected UI.
+</Card>
