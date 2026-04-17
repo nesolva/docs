@@ -4,3 +4,77 @@ description: "Multi-tenant authentication for React apps — install once, confi
 sidebarTitle: "Introduction"
 icon: "shield-halved"
 ---
+
+## What is ailita-library?
+
+`ailita-library` is a React/TypeScript library for multi-tenant user management. It handles authentication, profile management, admin dashboards, and OTP/2FA challenge flows — designed for React and Next.js apps consuming a REST backend.
+
+Drop it into your app once. Each tenant (merchant) configures its own login mode, branding, and permissions via the backend. Your frontend code stays the same.
+
+## Modules
+
+<Columns cols={2}>
+  <Card title="Auth" icon="right-to-bracket">
+    Multi-step login, signup, password recovery, and admin account setup.
+
+    **Components:** `LoginForm`, `SignupForm`, `ForgotPasswordForm`, `AdminSetup`
+  </Card>
+  <Card title="Profile" icon="user">
+    Authenticated user self-management — update info, change password, manage sessions, and configure TOTP.
+
+    **Components:** `ProfileForm`, `PasswordForm`, `EmailChangeForm`, `SessionsList`, `TOTPSetup`
+  </Card>
+  <Card title="Admin" icon="shield">
+    Admin dashboard for managing users, roles, and merchant settings.
+
+    **Components:** `UsersTable`, `UserDetail`, `UserActions`, `MerchantSettings`
+  </Card>
+  <Card title="Challenge" icon="lock">
+    Reusable OTP/2FA verification block used across all other modules.
+
+    **Components:** `ChallengeView`
+  </Card>
+</Columns>
+
+## How it works
+
+On mount, `AilitaProvider` calls `GET /auth/discovery?slug=` to fetch tenant configuration (branding colors, `loginMode`, `signupMode`, allowed features). The response is used to configure Axios headers and theme variables — your component tree renders only after this succeeds.
+
+```
+AilitaProvider       -- calls GET /auth/discovery?slug=, injects X-App-ID + X-Mid-Key headers
+  ThemeProvider      -- sets CSS variables (--color-primary, --color-secondary)
+    AuthProvider     -- auth state + silent token refresh on mount
+      {children}
+```
+
+Every API request made by the library automatically includes the tenant headers `X-App-ID` and `X-Mid-Key`, injected via an Axios interceptor after discovery completes.
+
+## Security posture
+
+The library implements a deliberate token storage strategy to balance security and usability:
+
+- **`accessToken`** — stored in memory only, inside a JS closure in `client.ts`. Never written to `localStorage`, `sessionStorage`, or cookies. Cleared on page refresh (by design — the refresh flow re-issues it silently on mount).
+- **`refreshToken`** — stored in the cookie `ailita_rt` with a 7-day TTL. This cookie is set by JavaScript (not `httpOnly`) so the library can clear it on explicit logout. It survives page reloads to enable silent re-authentication.
+- **401 refresh queue** — when a 401 response occurs, all concurrent in-flight requests are queued. The library refreshes the token once. On success, every queued request is replayed with the new token. On failure, the `onSessionExpired` callback fires and all tokens are cleared.
+
+<Warning>
+  `AuthGuard` is a client-side UX gate, not a server-side security boundary. It prevents unauthenticated users from seeing protected UI, but it cannot prevent API access. Every API endpoint must authenticate requests independently using the `Authorization` header.
+</Warning>
+
+## What this library does not handle
+
+- **CSRF protection** — the backend must implement CSRF mitigations for cookie-based endpoints.
+- **Rate limiting** — login attempt throttling and brute-force protection are the backend's responsibility.
+- **`httpOnly` cookie enforcement** — `ailita_rt` is a JS-accessible cookie. If your threat model requires `httpOnly` refresh tokens, that change must be made in the backend and this library updated accordingly.
+
+## Prerequisites
+
+- React 18 or later
+- Node.js 18 or later (for your app's build tooling)
+- A running ailita backend with at least one configured tenant slug
+
+## Next steps
+
+<Card title="Install the library" icon="download" href="/ailita/installation" horizontal>
+  npm install and CSS setup.
+</Card>
