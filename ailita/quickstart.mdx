@@ -3,3 +3,248 @@ title: "Quickstart"
 description: "Wire ailita-library into a new app in under 10 minutes."
 icon: "rocket"
 ---
+
+By the end of this guide you will have `AilitaProvider` wrapping your app, `AuthGuard` protecting a route, `LoginForm` handling authentication, and `useAuth` displaying the current user.
+
+## What you'll build
+
+- `providers.tsx` — AilitaProvider wrapper with tenant config
+- `(protected)/layout.tsx` or `ProtectedRoute.tsx` — AuthGuard route protection
+- `login/page.tsx` or `LoginPage.tsx` — Login page with LoginForm
+- `dashboard/page.tsx` or `DashboardPage.tsx` — Protected page using useAuth
+
+---
+
+<Steps>
+
+<Step title="Install and configure">
+
+See [Installation](/ailita/installation) for full setup details including Tailwind CSS.
+
+```bash
+npm install ailita-library
+```
+
+```tsx
+// Root layout or entry file
+import 'ailita-library/styles'
+```
+
+</Step>
+
+<Step title="Create the Providers wrapper">
+
+<Warning>
+  Always include `onSessionExpired`. Without it, expired sessions silently break the app — users get stuck with no feedback and no path back to login.
+</Warning>
+
+<CodeGroup>
+
+```tsx Next.js App Router
+// app/providers.tsx
+'use client'
+
+import { AilitaProvider } from 'ailita-library'
+import { useRouter } from 'next/navigation'
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
+  return (
+    <AilitaProvider
+      slug="your-merchant-slug"
+      appId="your-app-id"
+      baseUrl="https://api.yourdomain.com/api/v1"
+      onSessionExpired={() => router.push('/login')}
+      loadingFallback={<div>Loading...</div>}
+      errorFallback={<div>Could not reach the server.</div>}
+    >
+      {children}
+    </AilitaProvider>
+  )
+}
+```
+
+```tsx React Router
+// src/providers.tsx
+import { AilitaProvider } from 'ailita-library'
+import { useNavigate } from 'react-router-dom'
+
+export function AppProviders({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate()
+  return (
+    <AilitaProvider
+      slug="your-merchant-slug"
+      appId="your-app-id"
+      baseUrl="https://api.yourdomain.com/api/v1"
+      onSessionExpired={() => navigate('/login')}
+      loadingFallback={<div>Loading...</div>}
+      errorFallback={<div>Could not reach the server.</div>}
+    >
+      {children}
+    </AilitaProvider>
+  )
+}
+```
+
+</CodeGroup>
+
+</Step>
+
+<Step title="Wrap your root layout">
+
+<CodeGroup>
+
+```tsx Next.js App Router
+// app/layout.tsx
+import { Providers } from './providers'
+import 'ailita-library/styles'
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <Providers>{children}</Providers>
+      </body>
+    </html>
+  )
+}
+```
+
+```tsx React Router
+// src/main.tsx
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
+import { AppProviders } from './providers'
+import App from './App'
+import 'ailita-library/styles'
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <BrowserRouter>
+      <AppProviders>
+        <App />
+      </AppProviders>
+    </BrowserRouter>
+  </StrictMode>
+)
+```
+
+</CodeGroup>
+
+</Step>
+
+<Step title="Protect a route with AuthGuard">
+
+<Warning>
+  Always include `loadingFallback`. Omitting it causes a redirect flash for every authenticated user on each page load during the ~200–500ms silent token refresh on mount.
+</Warning>
+
+<CodeGroup>
+
+```tsx Next.js App Router
+// app/(protected)/layout.tsx
+'use client'
+
+import { AuthGuard } from 'ailita-library'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
+
+export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthGuard
+      fallback={<RedirectToLogin />}
+      loadingFallback={<div>Loading...</div>}
+    >
+      {children}
+    </AuthGuard>
+  )
+}
+
+function RedirectToLogin() {
+  const router = useRouter()
+  useEffect(() => { router.push('/login') }, [router])
+  return null
+}
+```
+
+```tsx React Router
+// src/components/ProtectedRoute.tsx
+import { AuthGuard } from 'ailita-library'
+import { Navigate } from 'react-router-dom'
+
+export function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthGuard
+      fallback={<Navigate to="/login" replace />}
+      loadingFallback={<div>Loading...</div>}
+    >
+      {children}
+    </AuthGuard>
+  )
+}
+```
+
+</CodeGroup>
+
+</Step>
+
+<Step title="Add a login page with LoginForm">
+
+```tsx
+import { LoginForm } from 'ailita-library'
+
+// Next.js: app/login/page.tsx  |  React Router: src/pages/LoginPage.tsx
+export default function LoginPage() {
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <LoginForm />
+    </div>
+  )
+}
+```
+
+<Note>
+  `LoginForm` handles all login states internally: password submission, OTP challenges, TOTP verification, and TOTP setup on first admin login. No additional wiring required for the basic case.
+</Note>
+
+</Step>
+
+<Step title="Read the current user in a protected page">
+
+```tsx
+import { useAuth } from 'ailita-library'
+
+export default function DashboardPage() {
+  const { user, logout } = useAuth()
+
+  return (
+    <div>
+      <h1>Welcome, {user?.firstName}</h1>
+      <p>{user?.email}</p>
+      <button onClick={logout}>Sign out</button>
+    </div>
+  )
+}
+```
+
+<Note>
+  `user` is `null` on initial render while the silent refresh runs. `AuthGuard` ensures this page only renders when `isAuthenticated` is `true`, so by the time this component mounts, `user` will be populated.
+</Note>
+
+</Step>
+
+</Steps>
+
+---
+
+## Next steps
+
+<Columns cols={2}>
+  <Card title="AilitaProvider props" icon="plug" href="/ailita/provider-setup">
+    Full prop reference for slug, appId, baseUrl, onSessionExpired, and more.
+  </Card>
+  <Card title="AuthGuard patterns" icon="shield" href="/ailita/auth-guard">
+    Role-based access, loadingFallback, and the UX-gate security model.
+  </Card>
+</Columns>
