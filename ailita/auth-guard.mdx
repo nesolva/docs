@@ -3,3 +3,124 @@ title: "AuthGuard"
 description: "Protect routes and sections by requiring authentication or specific roles."
 icon: "shield"
 ---
+
+<Warning>
+AuthGuard is a client-side UX gate, not a security boundary.
+It prevents rendering protected UI for unauthenticated users — it does not prevent
+API calls. Every API endpoint must authenticate requests independently.
+</Warning>
+
+## Basic usage
+
+Place `AuthGuard` around any route or section that requires authentication. The `fallback`
+prop is rendered when the user is not authenticated; `loadingFallback` is rendered while
+auth state is being restored.
+
+<CodeGroup>
+
+```tsx Next.js App Router
+// app/(protected)/layout.tsx
+'use client'
+
+import { AuthGuard } from 'ailita-library'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
+
+export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthGuard
+      fallback={<RedirectToLogin />}
+      loadingFallback={<div>Loading...</div>}
+    >
+      {children}
+    </AuthGuard>
+  )
+}
+
+function RedirectToLogin() {
+  const router = useRouter()
+  useEffect(() => { router.push('/login') }, [router])
+  return null
+}
+```
+
+```tsx React Router
+// src/components/ProtectedRoute.tsx
+import { AuthGuard } from 'ailita-library'
+import { Navigate } from 'react-router-dom'
+
+export function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthGuard
+      fallback={<Navigate to="/login" replace />}
+      loadingFallback={<div>Loading...</div>}
+    >
+      {children}
+    </AuthGuard>
+  )
+}
+```
+
+</CodeGroup>
+
+<Warning>
+Always provide `loadingFallback`. During the ~200-500ms silent token refresh on mount,
+`isAuthenticated` is `false` and `isLoading` is `true`. Without `loadingFallback`,
+every authenticated user sees a flash redirect to `/login` on every page load.
+</Warning>
+
+## Props
+
+<ParamField body="fallback" type="ReactNode" required>
+  Rendered when the user is not authenticated or lacks required roles. Typically a redirect
+  component (`<Navigate to="/login" />` in React Router) or a `useEffect`-based redirect
+  (Next.js App Router).
+</ParamField>
+
+<ParamField body="loadingFallback" type="ReactNode" default="null">
+  Rendered while authentication state is being restored (silent token refresh on mount).
+  Always provide this — the ~200-500ms refresh window causes a redirect flash without it.
+</ParamField>
+
+<ParamField body="requiredRoles" type="string[]">
+  Optional list of role names the user must have. Uses AND logic — all listed roles must be
+  present. Role strings come from the backend. There is no client-side enum.
+</ParamField>
+
+## Role-protected routes
+
+<Note>
+`requiredRoles` uses AND logic — all listed roles must be present.
+A user with `['ADMIN']` will NOT pass `requiredRoles={['ADMIN', 'SUPER_ADMIN']}`.
+</Note>
+
+```tsx
+<AuthGuard
+  fallback={<Navigate to="/forbidden" replace />}
+  loadingFallback={<Spinner />}
+  requiredRoles={['ADMIN']}
+>
+  <AdminPanel />
+</AuthGuard>
+```
+
+## How AuthGuard evaluates state
+
+AuthGuard checks three conditions in order, matching the source code logic:
+
+1. If `isLoading` is `true` — renders `loadingFallback`
+2. If `isAuthenticated` is `false` — renders `fallback`
+3. If `requiredRoles` is set and user does not have ALL listed roles — renders `fallback`
+4. Otherwise — renders `children`
+
+## What AuthGuard does not do
+
+- Does not make any network requests
+- Does not verify tokens (that is AuthProvider's responsibility via silent refresh)
+- Does not integrate with the server — it is purely client-side React rendering logic
+
+## Next steps
+
+<Card title="Quickstart" icon="rocket" href="/ailita/quickstart" horizontal>
+  See a complete end-to-end integration example with AilitaProvider, AuthGuard, and LoginForm.
+</Card>
