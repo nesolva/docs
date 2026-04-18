@@ -1,0 +1,223 @@
+---
+title: "Admin Module"
+description: "Components for managing users, account statuses, merchant settings, and role hierarchy — require admin-level authentication"
+---
+
+The Admin module provides four components for tenant administration: `UsersTable`, `UserDetail`, `MerchantSettings`, and `RolesManager`. All admin routes must be protected with `<AuthGuard requiredRoles={['ADMIN']} />` — the components themselves do not enforce authentication.
+
+<Warning>
+  These components make admin-only API calls. Rendering them without an ADMIN (or SUPER_ADMIN) role results in 403 errors from the backend. Always protect admin pages with AuthGuard before rendering any of these components.
+</Warning>
+
+---
+
+## UsersTable
+
+A standalone user management table with search, status filter, paginated list (25 users per page), and inline drill-down to `UserDetail`.
+
+### Props
+
+This component accepts no props. It is fully self-contained: it fetches all users on mount via `GET /users`, manages search/filter/pagination state internally, and opens `UserDetail` and `RolesManager` in modal overlays.
+
+### Built-in features
+
+- Search by email, first name, or last name (client-side filter over loaded users)
+- Filter by status: ACTIVE, INACTIVE, INVITED, DISABLED
+- Pagination: 25 users per page with prev/next controls
+- Stats summary row: total users, active count, inactive count
+- Click any row to open UserDetail modal
+- "Gestión de roles" button opens RolesManager modal
+
+<Note>
+  UsersTable loads all users in one request. There is no server-side pagination — filtering and pagination are computed in-browser from the full dataset. This is appropriate for tenants with hundreds of users; for thousands, consider a backend search endpoint.
+</Note>
+
+### Usage
+
+```tsx
+import { UsersTable } from 'ailita-library'
+
+export default function AdminUsersPage() {
+  return (
+    <div className="p-6">
+      <UsersTable />
+    </div>
+  )
+}
+```
+
+---
+
+## UserDetail
+
+A tabbed detail panel for a single user showing profile info, registered devices, activity log, and admin actions. The component fetches the user by ID on mount via `GET /users/:id`.
+
+### Props
+
+<ParamField body="userId" type="string" required>
+  The ID of the user to display. The component fetches the user by ID on mount.
+</ParamField>
+
+<ParamField body="onClose" type="() => void">
+  Optional callback to close the panel, used to dismiss a containing modal.
+</ParamField>
+
+<ParamField body="onUserUpdated" type="(user: UserResponse) => void">
+  Optional callback fired when an admin action changes the user's data — status change, role assignment, or TOTP disable. Receives the updated `UserResponse`.
+</ParamField>
+
+<ParamField body="onUserDeleted" type="(userId: string) => void">
+  Optional callback fired after the user is permanently deleted. Receives the deleted `userId`.
+</ParamField>
+
+### Tabs
+
+- **Info** — Full name, email, phone, email status (VALIDATED / VALIDATION_SENT / UNVALIDATED), 2FA status, registration date, last login
+- **Devices** — Registered device fingerprints with OS, browser, first/last seen, and seen count
+- **Activity** — Chronological event log: LOGIN, LOGOUT, LOGIN_FAILED, PASSWORD_CHANGE, EMAIL_CHANGE, TOTP_ENABLED, TOTP_DISABLED, SESSION_REVOKED, ROLE_ASSIGNED, ROLE_REVOKED, USER_DISABLED, USER_ENABLED, and more
+- **Actions** — Status management (ACTIVE / DISABLED / COMPROMISED), role assignment/revocation, 2FA disable (admin-only), and permanent delete
+
+<Warning>
+  The delete action in the Actions tab calls `DELETE /users/:id` (admin-only endpoint) and permanently removes the user. This action is not recoverable. The component shows a confirmation prompt before executing — do not bypass this prompt in custom integrations.
+</Warning>
+
+### Usage
+
+```tsx
+import { UserDetail } from 'ailita-library'
+
+function UserModal({ userId, onClose }: { userId: string; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <UserDetail
+          userId={userId}
+          onClose={onClose}
+          onUserUpdated={(updated) => console.log('Updated:', updated.status)}
+          onUserDeleted={(id) => { console.log('Deleted:', id); onClose() }}
+        />
+      </div>
+    </div>
+  )
+}
+```
+
+---
+
+## MerchantSettings
+
+A settings form for configuring branding, authentication policies, and 2FA behaviour at the merchant level.
+
+### Props
+
+<ParamField body="onSuccess" type="() => void">
+  Optional callback fired after merchant settings are saved successfully.
+</ParamField>
+
+### Settings fields
+
+These are form fields exposed by the component, not component props:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | `string` | Merchant display name |
+| `logoUrl` | `string \| null` | URL to the merchant's logo image |
+| `primaryColor` | `string \| null` | Hex color (`#rrggbb`) used as `--color-primary` CSS variable |
+| `secondaryColor` | `string \| null` | Hex color (`#rrggbb`) used as `--color-secondary` CSS variable |
+| `signupMode` | `'OPEN' \| 'INVITATION_ONLY'` | Controls whether new users can self-register |
+| `loginMode` | `'PASSWORD' \| 'OTP_EMAIL' \| 'PASSWORD_OR_OTP_EMAIL'` | Authentication method for this tenant |
+| `totpAllowed` | `boolean` | Whether users can set up TOTP 2FA |
+| `allowUserDisableTotp` | `boolean` | Whether users can remove their own 2FA |
+
+<Note>
+  MerchantSettings sources its initial values from `useMerchant().merchant` and pre-populates the form on mount. The Save button is disabled until a field is changed (isDirty guard from react-hook-form).
+</Note>
+
+<Warning>
+  Changing `loginMode` affects how the LoginForm renders for all users in the tenant immediately. Switching from `PASSWORD` to `OTP_EMAIL` on a live tenant will disable password login for all users — ensure users have a valid email before switching.
+</Warning>
+
+### Usage
+
+```tsx
+import { MerchantSettings } from 'ailita-library'
+
+export default function AdminSettingsPage() {
+  return (
+    <div className="max-w-lg p-6">
+      <h2 className="text-lg font-semibold mb-4">Merchant settings</h2>
+      <MerchantSettings onSuccess={() => console.log('Settings saved')} />
+    </div>
+  )
+}
+```
+
+---
+
+## RolesManager
+
+Displays the tenant's full role hierarchy and provides controls to create or delete merchant-owned roles.
+
+### Props
+
+<ParamField body="onClose" type="() => void">
+  Optional callback to dismiss the manager, used when rendered in a modal as UsersTable does internally.
+</ParamField>
+
+### Role hierarchy
+
+- **SYSTEM roles** (SUPER_ADMIN priority 0, ADMIN priority 1, DEFAULT priority 2+) are read-only — they cannot be deleted
+- **MERCHANT roles** are created by admins and can be assigned to users and deleted
+- Priority: lower number = higher privilege. Priorities 0 and 1 are reserved for SYSTEM roles
+- New merchant roles require priority ≥ 2
+
+<Warning>
+  Deleting a MERCHANT role does not automatically revoke it from users who have been assigned it. Revoke role assignments via UserDetail → Actions tab before deleting the role to avoid privilege orphaning.
+</Warning>
+
+### Usage
+
+```tsx
+import { RolesManager } from 'ailita-library'
+
+function RolesModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
+        <RolesManager onClose={onClose} />
+      </div>
+    </div>
+  )
+}
+```
+
+---
+
+## UserStatus values
+
+The `UserStatus` type represents all possible account states. This enum is used in `UsersTable` for status filtering, `UserDetail` for display, and `UserActions` for status management.
+
+| Value | Meaning |
+|-------|---------|
+| `ACTIVE` | User can log in normally |
+| `INACTIVE` | Account exists but not activated |
+| `INVITED` | Signup invitation sent, not yet completed |
+| `DISABLED` | Admin-disabled — cannot log in |
+| `COMPROMISED` | Flagged as compromised — cannot log in, requires review |
+| `TIMED_OUT` | Temporarily locked (for example, after failed login attempts) |
+
+<Note>
+  Admins can change status to ACTIVE, DISABLED, or COMPROMISED via the Actions tab in UserDetail. INACTIVE, INVITED, and TIMED_OUT are set by the system and are not selectable from the admin UI.
+</Note>
+
+---
+
+## Next steps
+
+<Card title="Profile Module" href="/ailita/profile-module">
+  ProfileForm, PasswordForm, EmailChangeForm, SessionsList, and TOTPSetup prop reference
+</Card>
+
+<Card title="Challenge Module" href="/ailita/challenge-module">
+  ChallengeView props, dual-response contract, and expiry handling
+</Card>

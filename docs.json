@@ -101,7 +101,8 @@
           {
             "group": "Component reference",
             "pages": [
-              "ailita/profile-module"
+              "ailita/profile-module",
+              "ailita/admin-module"
             ]
           }
         ]
