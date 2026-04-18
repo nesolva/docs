@@ -94,7 +94,8 @@
           {
             "group": "Session management",
             "pages": [
-              "ailita/session-management"
+              "ailita/session-management",
+              "ailita/merchant-roles"
             ]
           }
         ]

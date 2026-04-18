@@ -1,0 +1,363 @@
+---
+title: "Merchant & Roles"
+description: "Manage tenant configuration with useMerchant and control role definitions and assignments with useRoles."
+icon: "building"
+---
+
+`useMerchant` and `useRoles` are admin hooks — they expose operations that require elevated
+permissions on the backend. Build them into admin-only routes protected by `AuthGuard` with
+`requiredRoles={['ADMIN']}`.
+
+---
+
+## useMerchant
+
+Fetches `GET /merchants/me` on mount. Exposes methods for updating merchant settings, managing
+the theme, and generating API keys. This is the hook behind the `MerchantSettings` component.
+
+### Return Shape
+
+```typescript
+return {
+  merchant,     // MerchantResponse | null
+  isLoading,    // boolean
+  error,        // string | null
+  refresh,      // () => Promise<void> — re-fetches GET /merchants/me
+  update,       // (data: UpdateMerchantRequest) => Promise<MerchantResponse>
+  addApiKey,    // (label: string) => Promise<GenerateApiKeyResponse>
+  removeApiKey, // (keyId: string) => Promise<void>
+  clearError,   // () => void
+}
+```
+
+<ParamField body="merchant" type="MerchantResponse | null">
+  The loaded merchant record. `null` while loading on mount. Contains tenant settings
+  including `primaryColor`, `secondaryColor`, `loginMode`, `signupMode`, and `totpAllowed`.
+</ParamField>
+
+<ParamField body="isLoading" type="boolean">
+  `true` during the initial fetch and while an `update` call is in progress.
+</ParamField>
+
+<ParamField body="error" type="string | null">
+  Last error message from any operation. Cleared automatically at the start of the next
+  operation or manually via `clearError()`.
+</ParamField>
+
+<ParamField body="refresh" type="() => Promise<void>">
+  Re-fetches `GET /merchants/me` and updates the local merchant state.
+</ParamField>
+
+<ParamField body="update" type="(data: UpdateMerchantRequest) => Promise<MerchantResponse>">
+  Updates the merchant record via `PATCH /merchants/:id`. Returns the updated merchant.
+
+  <Note>
+    Calling `update()` automatically applies the updated `primaryColor` and `secondaryColor`
+    to the current session via `applyTheme()`. You do not need to call any theme method
+    manually — the UI updates immediately.
+  </Note>
+</ParamField>
+
+<ParamField body="addApiKey" type="(label: string) => Promise<GenerateApiKeyResponse>">
+  Generates a new API key for this merchant. Throws `'No merchant loaded'` if called before
+  mount completes — guard with `if (!merchant) return` before calling.
+</ParamField>
+
+<ParamField body="removeApiKey" type="(keyId: string) => Promise<void>">
+  Revokes an API key by its ID. Throws `'No merchant loaded'` if the merchant has not
+  loaded yet.
+</ParamField>
+
+<ParamField body="clearError" type="() => void">
+  Manually clear the `error` state.
+</ParamField>
+
+### MerchantResponse Type
+
+```typescript
+export interface MerchantResponse {
+  id: string
+  name: string
+  mid: string
+  app: string
+  subdomain: string
+  publicApiKey: string
+  logoUrl: string | null
+  primaryColor: string | null
+  secondaryColor: string | null
+  adminUserId: string
+  createdAt: string
+  signupMode?: SignupMode       // 'OPEN' | 'INVITATION_ONLY'
+  loginMode?: LoginMode         // 'PASSWORD' | 'OTP_EMAIL' | 'PASSWORD_OR_OTP_EMAIL'
+  totpAllowed?: boolean
+  allowUserDisableTotp?: boolean
+}
+```
+
+### UpdateMerchantRequest Type
+
+```typescript
+export interface UpdateMerchantRequest {
+  name?: string
+  logoUrl?: string | null
+  primaryColor?: string | null
+  secondaryColor?: string | null
+  signupMode?: SignupMode
+  loginMode?: LoginMode
+  totpAllowed?: boolean | null
+  allowUserDisableTotp?: boolean | null
+}
+```
+
+### Updating Theme Colors
+
+`primaryColor` and `secondaryColor` in `UpdateMerchantRequest` are CSS hex color strings
+(e.g., `#133e8b`). When you call `update()` with new colors, the library calls `applyTheme()`
+internally — all `ThemeProvider` CSS variables update immediately without a page reload.
+
+```tsx
+const { update } = useMerchant()
+
+await update({
+  primaryColor: '#1a56db',
+  secondaryColor: '#7e3af2',
+})
+// CSS variables --color-primary and --color-secondary are updated immediately
+```
+
+### API Key Management
+
+`addApiKey(label)` calls `POST /merchants/:id/api-keys` and returns the full API key in
+`GenerateApiKeyResponse.apiKey`. This is the ONLY time the key is available — it is not
+returned again after creation.
+
+```typescript
+export interface GenerateApiKeyResponse {
+  keyId: string
+  apiKey: string
+  keyPrefix: string
+  label: string
+}
+```
+
+<Warning>
+  The `apiKey` value in `GenerateApiKeyResponse` is shown only once — store it securely
+  immediately. Subsequent calls to `addApiKey()` generate new keys; lost keys must be
+  revoked and replaced.
+</Warning>
+
+```tsx
+const { addApiKey, removeApiKey, merchant } = useMerchant()
+
+// Generate a new key
+const result = await addApiKey('Production web app')
+console.log(result.apiKey)  // Store securely — only shown once
+console.log(result.keyId)   // Save this for later revocation
+
+// Revoke a key by its ID
+await removeApiKey(result.keyId)
+```
+
+### Protecting Admin Routes
+
+<Warning>
+  Always protect any route using `useMerchant` with `AuthGuard requiredRoles={['ADMIN']}`.
+  Without this gate, any authenticated user — not just admins — could reach the merchant
+  settings UI.
+</Warning>
+
+```tsx
+<AuthGuard
+  fallback={<Navigate to="/login" />}
+  requiredRoles={['ADMIN']}
+>
+  <MerchantSettingsPage />
+</AuthGuard>
+```
+
+---
+
+## useRoles
+
+`useRoles` provides full role lifecycle management — list, create, delete, assign, and revoke.
+It fetches all roles for the app on mount. This is the hook behind the `RolesManager` component.
+
+### Return Shape
+
+```typescript
+return {
+  roles,    // RoleResponse[]
+  isLoading, // boolean
+  error,    // string | null
+  refresh,  // () => Promise<void> — re-fetches GET /roles
+  add,      // (data: CreateRoleRequest) => Promise<RoleResponse>
+  remove,   // (roleId: string) => Promise<void>
+  assign,   // (data: AssignRoleRequest) => Promise<void>
+  revoke,   // (userId: string, roleId: string) => Promise<void>
+}
+```
+
+<ParamField body="roles" type="RoleResponse[]">
+  All roles defined for this app — both `SYSTEM` (built-in) and `MERCHANT` (custom) roles.
+</ParamField>
+
+<ParamField body="isLoading" type="boolean">
+  `true` during the initial roles fetch.
+</ParamField>
+
+<ParamField body="error" type="string | null">
+  Last error message from a fetch operation.
+</ParamField>
+
+<ParamField body="refresh" type="() => Promise<void>">
+  Re-fetches `GET /roles` and updates the local roles array.
+</ParamField>
+
+<ParamField body="add" type="(data: CreateRoleRequest) => Promise<RoleResponse>">
+  Creates a new MERCHANT-owned role and appends it to the local roles array. Returns the
+  created role including its generated `id`.
+</ParamField>
+
+<ParamField body="remove" type="(roleId: string) => Promise<void>">
+  Deletes a MERCHANT-owned role and removes it from the local array.
+
+  <Note>
+    Only MERCHANT-owned roles (`role.owner === 'MERCHANT'`) can be deleted. SYSTEM roles
+    are built-in and cannot be removed.
+  </Note>
+</ParamField>
+
+<ParamField body="assign" type="(data: AssignRoleRequest) => Promise<void>">
+  Assigns a role to a user. Accepts an optional `expiresAt` ISO 8601 string for time-limited
+  role grants. Does NOT update the local roles array — the role list is app-level, not
+  user-level.
+</ParamField>
+
+<ParamField body="revoke" type="(userId: string, roleId: string) => Promise<void>">
+  Removes a role from a user. Does NOT update the local roles array.
+</ParamField>
+
+### Key Types
+
+```typescript
+export interface RoleResponse {
+  id: string
+  name: string
+  app: string | null
+  mid: string | null
+  custom: boolean
+  priority: number
+  owner: RoleOwner    // 'SYSTEM' | 'MERCHANT'
+  createdAt: string
+}
+```
+
+```typescript
+export interface CreateRoleRequest {
+  name: string
+  app?: string
+  mid?: string
+  custom?: boolean
+  priority: number
+}
+```
+
+```typescript
+export interface AssignRoleRequest {
+  userId: string
+  roleId: string
+  app: string
+  mid: string
+  expiresAt?: string    // ISO 8601 — optional role expiry
+}
+```
+
+### Role Hierarchy
+
+<Note>
+  Roles have two `owner` values:
+
+  - `SYSTEM` — built-in roles defined by the ailita backend (e.g., `ADMIN`, `USER`). Cannot be deleted.
+  - `MERCHANT` — custom roles created by your tenant. Created via `add()`, deleted via `remove()`.
+
+  The `priority` field determines precedence. Lower priority number = higher authority. Assign
+  MERCHANT custom roles priorities of 100 or higher to avoid conflicts with SYSTEM roles (which
+  typically use 1–10).
+</Note>
+
+### Creating and Assigning a Custom Role
+
+<Steps>
+  <Step title="Create the role definition">
+    Call `add()` with a name and priority. Use a priority of 100 or higher for custom roles.
+  </Step>
+  <Step title="Get the role ID from the result">
+    The returned `RoleResponse` contains the generated `id` — save it for the assign call.
+  </Step>
+  <Step title="Assign the role to a user">
+    Call `assign()` with the user ID, role ID, and tenant context from `useMerchant().merchant`.
+  </Step>
+</Steps>
+
+```tsx
+const { merchant } = useMerchant()
+const { add, assign } = useRoles()
+
+// Step 1: Create the role
+const moderatorRole = await add({
+  name: 'MODERATOR',
+  priority: 100,
+  custom: true,
+})
+
+// Step 2: Assign to a user
+await assign({
+  userId: 'user-id-here',
+  roleId: moderatorRole.id,
+  app: merchant!.app,
+  mid: merchant!.mid,
+})
+```
+
+<Note>
+  Always read `app` and `mid` from `useMerchant().merchant` — do not hardcode them. These
+  values tie the assignment to the correct tenant.
+</Note>
+
+### Time-Limited Role Grants
+
+`AssignRoleRequest.expiresAt` accepts an ISO 8601 datetime string for temporary role grants:
+
+```tsx
+await assign({
+  userId: targetUserId,
+  roleId: trialRoleId,
+  app: merchant!.app,
+  mid: merchant!.mid,
+  expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+})
+```
+
+### Using Roles for Access Control
+
+<Warning>
+  Do not use `useRoles` for access control checks. `useRoles` manages the role registry —
+  not the current user's permissions.
+
+  For route protection: use `AuthGuard` with `requiredRoles` (AND logic — user must have all
+  listed roles).
+  For programmatic checks: read `useAuthContext().roles`.
+  `useRoles` is for admin operations only.
+</Warning>
+
+---
+
+## Next steps
+
+<Card title="Hooks Reference" icon="brackets-curly" href="/ailita/hooks">
+  All five hooks in one place — useAuth, useUser, useSessions, useMerchant, and useRoles.
+</Card>
+
+<Card title="Component Reference" icon="rectangle-list" href="/ailita/profile-components">
+  Prop tables for ProfileForm, PasswordForm, EmailChangeForm, SessionsList, and TOTPSetup.
+</Card>
