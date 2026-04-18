@@ -90,6 +90,12 @@
               "ailita/hooks",
               "ailita/signup-forgot-password"
             ]
+          },
+          {
+            "group": "Session management",
+            "pages": [
+              "ailita/session-management"
+            ]
           }
         ]
       }

@@ -1,0 +1,220 @@
+---
+title: "Session Management"
+description: "Configure session expiry handling with onSessionExpired and manage active sessions with useSessions."
+icon: "clock-rotate-left"
+---
+
+ailita-library manages the session lifecycle automatically — access tokens refresh silently in the background using the `ailita_rt` cookie. When the refresh token is exhausted (expired, revoked, or invalidated by the server), the library clears all auth state and fires `onSessionExpired`. Your responsibility is wiring this callback to redirect the user to the login page, and optionally giving users visibility into their active sessions via the `useSessions` hook.
+
+## onSessionExpired
+
+`onSessionExpired` is a prop on `AilitaProvider`. Although it is typed as optional (`() => void | undefined`), it is a **required integration step** in any production application. If omitted, sessions expire silently: tokens are cleared but the user receives no redirect and no error — they are left in a broken state with stale UI and failing API calls and no recovery path.
+
+### What triggers onSessionExpired
+
+<Steps>
+  <Step title="A request returns HTTP 401">
+    An authenticated API call receives a 401 response. The library detects the expired access token.
+  </Step>
+  <Step title="Concurrent requests are queued">
+    The failing request and all subsequent requests made while the refresh is in progress are queued. No requests are dropped — they will replay if the refresh succeeds.
+  </Step>
+  <Step title="One refresh attempt is made">
+    The library attempts a single token refresh using the `ailita_rt` cookie. If the refresh succeeds, all queued requests replay automatically and the user experiences no interruption.
+  </Step>
+  <Step title="Refresh fails — cleanup runs">
+    If the refresh fails (cookie expired, revoked, or server rejection): all queued requests are rejected, `clearTokens()` fires (the access token is cleared from memory and the `ailita_rt` cookie is removed), then the user state is set to `null` and the roles array is cleared.
+  </Step>
+  <Step title="onSessionExpired fires last">
+    After all cleanup is complete, `onSessionExpired` fires. User state is already `null` when your callback runs — auth cleanup has already happened.
+  </Step>
+</Steps>
+
+<Warning>
+  Do not call logout or attempt to clear tokens inside `onSessionExpired`. The library has already cleared all auth state before firing this callback. Calling additional cleanup will cause redundant operations or errors.
+</Warning>
+
+### Wiring onSessionExpired
+
+<CodeGroup>
+
+```tsx Next.js App Router
+'use client'
+import { AilitaProvider } from 'ailita-library'
+import { useRouter } from 'next/navigation'
+
+function Providers({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
+
+  return (
+    <AilitaProvider
+      slug="your-slug"
+      appId="your-app-id"
+      baseUrl="https://api.example.com/api/v1"
+      onSessionExpired={() => router.push('/login?reason=expired')}
+    >
+      {children}
+    </AilitaProvider>
+  )
+}
+```
+
+```tsx React Router
+import { AilitaProvider } from 'ailita-library'
+import { useNavigate } from 'react-router-dom'
+
+function Providers({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate()
+
+  return (
+    <AilitaProvider
+      slug="your-slug"
+      appId="your-app-id"
+      baseUrl="https://api.example.com/api/v1"
+      onSessionExpired={() => navigate('/login', { state: { reason: 'expired' } })}
+    >
+      {children}
+    </AilitaProvider>
+  )
+}
+```
+
+</CodeGroup>
+
+<Note>
+  The `reason=expired` query parameter is a UX convention — show a "Your session has expired, please log in again" message on the login page when this parameter is present. This tells the user why they were redirected rather than leaving them confused about why they ended up on the login page.
+</Note>
+
+### What happens if onSessionExpired is omitted
+
+<Warning>
+  If `onSessionExpired` is not provided, expired sessions fail silently. After token exhaustion: all queued API calls reject, the user's auth state is cleared in memory, but no redirect occurs. The user sees API errors or stale UI with no recovery path. Always provide `onSessionExpired`.
+</Warning>
+
+## useSessions
+
+`useSessions` fetches the authenticated user's active sessions from `GET /users/me/sessions` on mount and exposes methods to revoke individual sessions or sign out all devices. Use it to build a "Manage devices" UI in profile settings, giving users visibility into where they are logged in and the ability to terminate sessions they do not recognize.
+
+### Return Shape
+
+```typescript
+interface UseSessionsReturn {
+  sessions: SessionResponse[]
+  isLoading: boolean
+  error: string | null
+  refresh: () => Promise<void>
+  revoke: (sessionId: string) => Promise<void>
+  revokeAll: () => Promise<void>
+}
+```
+
+<ParamField body="sessions" type="SessionResponse[]">
+  The list of active sessions. The entry with `current: true` is the user's current device and session.
+</ParamField>
+
+<ParamField body="isLoading" type="boolean">
+  True during the initial session fetch and during revoke operations. Use this to show a loading indicator while sessions are being loaded or a revoke is in progress.
+</ParamField>
+
+<ParamField body="error" type="string | null">
+  Last error message from a fetch or revoke operation. Cleared automatically at the start of the next operation. Render this to surface API errors to the user.
+</ParamField>
+
+<ParamField body="refresh" type="() => Promise<void>">
+  Re-fetches `GET /users/me/sessions`. Use after external revocations or when you want to force a sync with the server.
+</ParamField>
+
+<ParamField body="revoke" type="(sessionId: string) => Promise<void>">
+  Revokes a single session by ID. The session is removed from the local `sessions` array immediately on success. Throws on API error — wrap in try/catch if you need to handle errors inline.
+</ParamField>
+
+<ParamField body="revokeAll" type="() => Promise<void>">
+  Revokes all sessions. Clears the local `sessions` array on success. Throws on API error. Note: the backend may keep the current session active depending on your configuration — see the note below.
+</ParamField>
+
+<Warning>
+  Do not allow users to revoke the session where `current === true` without a UX warning. Revoking the current session signs the user out immediately — they lose their access token and will be redirected via `onSessionExpired`. The code example below excludes the revoke button for the current session.
+</Warning>
+
+### SessionResponse Type
+
+```typescript
+export interface SessionResponse {
+  id: string
+  deviceName: string | null
+  deviceOs: string | null
+  deviceBrowser: string | null
+  lastIp: string | null
+  createdAt: string
+  lastSeenAt: string
+  current: boolean   // true = this device's current session
+}
+```
+
+### Building a Sessions List
+
+```tsx
+import { useSessions } from 'ailita-library'
+
+export function SessionsPage() {
+  const { sessions, isLoading, error, revoke, revokeAll } = useSessions()
+
+  if (isLoading) return <p>Loading sessions...</p>
+  if (error) return <p className="text-red-600">{error}</p>
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h2>Active sessions</h2>
+        <button
+          onClick={revokeAll}
+          className="text-sm text-red-600 hover:underline"
+        >
+          Sign out all other devices
+        </button>
+      </div>
+
+      <ul className="space-y-3">
+        {sessions.map((session) => (
+          <li key={session.id} className="flex items-center justify-between border rounded p-3">
+            <div>
+              <p className="font-medium">
+                {session.deviceBrowser ?? 'Unknown browser'} on {session.deviceOs ?? 'Unknown OS'}
+                {session.current && (
+                  <span className="ml-2 text-xs text-green-600 font-semibold">Current</span>
+                )}
+              </p>
+              <p className="text-sm text-gray-500">
+                Last active: {new Date(session.lastSeenAt).toLocaleDateString()}
+                {session.lastIp && ` · ${session.lastIp}`}
+              </p>
+            </div>
+            {!session.current && (
+              <button
+                onClick={() => revoke(session.id)}
+                className="text-sm text-red-600 hover:underline"
+              >
+                Revoke
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+```
+
+<Note>
+  `revokeAll` signs out all OTHER devices — the current session remains active. If you want to sign the user out of all devices including the current one, call `revokeAll()` followed by the `logout()` method from `useAuth()`.
+</Note>
+
+## Next steps
+
+<Card title="Hooks Reference" icon="brackets-curly" href="/ailita/hooks">
+  Complete reference for all hooks — useAuth, useUser, useSessions, useMerchant, and useRoles — with return shapes and code examples in one place.
+</Card>
+
+<Card title="Auth Flows" icon="key" href="/ailita/auth-flows">
+  Understand the full login state machine and challenge lifecycle.
+</Card>
