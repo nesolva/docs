@@ -82,6 +82,14 @@
               "ailita/auth-guard",
               "ailita/quickstart"
             ]
+          },
+          {
+            "group": "Auth & identity",
+            "pages": [
+              "ailita/auth-flows",
+              "ailita/hooks",
+              "ailita/signup-forgot-password"
+            ]
           }
         ]
       }
