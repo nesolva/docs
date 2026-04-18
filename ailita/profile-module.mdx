@@ -1,0 +1,254 @@
+---
+title: "Profile Module"
+description: "Self-service components for authenticated users to manage their profile, password, email, sessions, and 2FA"
+---
+
+The Profile module contains five components — `ProfileForm`, `PasswordForm`, `EmailChangeForm`, `SessionsList`, and `TOTPSetup` — all designed to be dropped into any authenticated page because they source their own state via hooks internally.
+
+Each component is intentionally self-contained. You do not need to fetch user data before rendering them, pass user objects as props, or manage loading state. The components use `useUser`, `useSessions`, and `useAilita` internally and handle all async operations, error display, and state transitions themselves.
+
+---
+
+## ProfileForm
+
+Renders first name, last name, and phone fields; the email field is read-only (changing it requires `EmailChangeForm`). Internally uses `useUser()` to pre-populate fields on mount and to call `PATCH /users/me` on submit.
+
+### Props
+
+<ParamField body="onSuccess" type="() => void">
+  Optional callback fired after a successful profile update. The form handles its own loading and error state via `useUser` internally — you do not need to pass `isLoading` or `error` as props.
+</ParamField>
+
+### Usage
+
+```tsx
+import { ProfileForm } from 'ailita-library'
+
+export default function SettingsPage() {
+  return (
+    <div className="max-w-md">
+      <ProfileForm onSuccess={() => console.log('Profile updated')} />
+    </div>
+  )
+}
+```
+
+<Note>
+  The form pre-populates from `useUser().user` on mount and resets if the user object changes externally (for example, if the user data is refreshed after an admin update). The Save button is disabled until the user makes a change (isDirty guard) — submitting an unchanged form is not possible.
+</Note>
+
+### Validation rules
+
+The form validates on submit using Zod:
+
+- `firstName` — required, min 1 character
+- `lastName` — required, min 1 character
+- `phone` — optional; any string value is accepted, including an empty string to clear the field
+
+Validation errors are displayed inline below each field. The `error` state from `useUser` (API-level errors) is rendered below all fields.
+
+---
+
+## PasswordForm
+
+Allows the authenticated user to change their password; requires the current password plus a new password that satisfies the strength requirements.
+
+### Props
+
+<ParamField body="onSuccess" type="() => void">
+  Optional callback fired after the password is changed successfully. The form resets to its empty state before firing this callback.
+</ParamField>
+
+### Usage
+
+```tsx
+import { PasswordForm } from 'ailita-library'
+
+export default function SecurityPage() {
+  return (
+    <div className="max-w-md">
+      <PasswordForm onSuccess={() => console.log('Password changed')} />
+    </div>
+  )
+}
+```
+
+<Note>
+  If the user has 2FA enabled (`user.totpEnabled === true`), a TOTP code field appears automatically. The schema validation requires a 6-digit numeric code in that case. You do not need to pass any prop to control this — it is driven by user state read from `useUser()` internally.
+</Note>
+
+<Warning>
+  The form clears and resets after a successful change. Do not attempt to read form values from a ref after `onSuccess` fires — the internal state has already been wiped by `reset()`. If you need to perform a redirect after a password change, do it inside `onSuccess`.
+</Warning>
+
+### Validation rules
+
+The password schema is built dynamically based on `user.totpEnabled`:
+
+- `currentPassword` — required, min 1 character
+- `newPassword` — min 8 characters, must contain at least one letter and one number
+- `totpCode` — required only when `user.totpEnabled === true`; must be exactly 6 numeric digits
+
+After a successful change, the component replaces the form with a green confirmation message. The `onSuccess` callback fires at this point.
+
+---
+
+## EmailChangeForm
+
+Initiates an email-change flow by sending a verification code to the new address, then completing it via an internally rendered `ChallengeView` component.
+
+### Props
+
+<ParamField body="onSuccess" type="() => void">
+  Optional callback fired after the new email is confirmed and the change is committed. This fires only after the OTP verification step (step 2), not after the initial form submission (step 1).
+</ParamField>
+
+### Usage
+
+```tsx
+import { EmailChangeForm } from 'ailita-library'
+
+export default function AccountPage() {
+  return (
+    <div className="max-w-md">
+      <EmailChangeForm onSuccess={() => console.log('Email updated')} />
+    </div>
+  )
+}
+```
+
+<Note>
+  This component is two-step internally. Step 1: the user submits the new email address, which calls `POST /users/me/email-change` and returns a `challengeId`. Step 2: the component renders `ChallengeView` with `type="EMAIL"` using that `challengeId`. The `onSuccess` callback fires only after step 2 (code verification) completes successfully and the challenge returns `status: "COMPLETED"`.
+</Note>
+
+<Warning>
+  Do not pass `onSuccess` expecting it to fire after the form submission — it fires only after the OTP verification step. If the user closes or navigates away between step 1 and step 2, the challenge is abandoned (no automatic cleanup on the client). The backend challenge will eventually expire on its own.
+</Warning>
+
+### Internal state transitions
+
+```
+initial → [user submits new email] → challenge created
+challenge created → [ChallengeView renders with type="EMAIL"]
+ChallengeView → [user enters OTP] → status: COMPLETED
+status: COMPLETED → setDone(true) → onSuccess?.()
+```
+
+After `onSuccess` fires, the component renders a green confirmation message in place of the form. There is no way to reset the component to the initial state from the outside — if you need to allow another email change, unmount and remount it.
+
+---
+
+## SessionsList
+
+Displays the user's active sessions with device details (browser, OS, IP, last activity) and provides per-session revoke controls and a revoke-all button.
+
+### Props
+
+This component accepts no props. It is fully self-contained: it fetches sessions on mount via `useSessions()` and manages all revoke state internally. You cannot pass custom render logic, session data, or callbacks.
+
+<Warning>
+  The revoke button is intentionally hidden for the session where `session.current === true` — revoking it would immediately invalidate the access token and trigger `onSessionExpired`, signing the user out of the current browser. If you need to sign out everywhere including the current device, use the "Revoke all" button which calls `POST /sessions/revoke-all` and then relies on `onSessionExpired` to handle the redirect.
+</Warning>
+
+<Note>
+  This component provides the same UI as the `SessionsList` built in the `useSessions` usage example in session-management.mdx. Use `SessionsList` when you want the default device-card UI. Use the `useSessions` hook directly when you need custom rendering, additional metadata, or integration with your own design system.
+</Note>
+
+### Usage
+
+```tsx
+import { SessionsList } from 'ailita-library'
+
+export default function SecurityPage() {
+  return (
+    <section>
+      <h2>Active sessions</h2>
+      <SessionsList />
+    </section>
+  )
+}
+```
+
+### Loading and error states
+
+While sessions are loading on mount, the component renders a centered spinner. If the fetch fails, an error message is displayed inline. Revoke operations disable the individual revoke button with a loading indicator while the request is in flight.
+
+---
+
+## TOTPSetup
+
+A multi-step component guiding the user through TOTP 2FA setup or removal, including QR code display, backup code generation, and confirmation via a 6-digit code.
+
+### Props
+
+<ParamField body="onSuccess" type="() => void">
+  Optional callback fired after 2FA is successfully enabled — specifically after `verifyTotp(code)` succeeds and `totpEnabled` is set to `true` on the user. This callback is **not** fired when the user disables 2FA.
+</ParamField>
+
+<Warning>
+  The component renders a "not available" message when the merchant has `totpAllowed` set to `false` — it shows no setup UI and no buttons. If you are embedding `TOTPSetup` in a settings page, conditionally render it based on `useMerchant().merchant?.totpAllowed` to avoid displaying an empty widget:
+
+  ```tsx
+  import { TOTPSetup, useMerchant } from 'ailita-library'
+
+  export function SecuritySettings() {
+    const { merchant } = useMerchant()
+
+    return (
+      <div>
+        {merchant?.totpAllowed && (
+          <TOTPSetup onSuccess={() => console.log('2FA enabled')} />
+        )}
+      </div>
+    )
+  }
+  ```
+</Warning>
+
+<Note>
+  The disable-2FA button is only shown if the merchant permits it (`merchant.allowUserDisableTotp !== false`). If the merchant has locked 2FA as mandatory, the user sees "Disabling 2FA is not permitted on this platform" and cannot remove it regardless of their current 2FA status.
+</Note>
+
+### Setup flow
+
+<Steps>
+  <Step title="Initiate setup">
+    The component calls `initTotp()`, which hits `POST /users/me/totp/init` and returns a `qrUri` and a list of `backupCodes`. The QR code is rendered as an image using an external QR service, and backup codes are displayed in a copyable grid.
+  </Step>
+  <Step title="Scan and save backup codes">
+    The user scans the QR code with their authenticator app (Google Authenticator, Authy, 1Password, etc.) and saves the backup codes in a secure location. The user then clicks the "I scanned the QR" button to advance to confirmation.
+  </Step>
+  <Step title="Verify and activate">
+    The component calls `verifyTotp(code)`, which validates the 6-digit code server-side via `POST /users/me/totp/verify`. On success, `totpEnabled` is set to `true` on the user object and `onSuccess` fires.
+  </Step>
+</Steps>
+
+### Disable flow
+
+When `user.totpEnabled === true` and `merchant.allowUserDisableTotp !== false`, a "Disable 2FA" link is shown. Clicking it transitions to a confirmation step that requires the user to enter a valid TOTP code before `removeTotp(code)` is called. This prevents accidental or unauthorized 2FA removal.
+
+### Usage
+
+```tsx
+import { TOTPSetup } from 'ailita-library'
+
+export default function SecurityPage() {
+  return (
+    <div className="max-w-md">
+      <TOTPSetup onSuccess={() => console.log('2FA enabled')} />
+    </div>
+  )
+}
+```
+
+---
+
+## Next steps
+
+<Card title="Admin Module" href="/ailita/admin-module">
+  UsersTable, UserDetail, MerchantSettings, and RolesManager prop reference.
+</Card>
+
+<Card title="Challenge Module" href="/ailita/challenge-module">
+  ChallengeView props, dual-response contract, and expiry handling.
+</Card>

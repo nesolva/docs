@@ -97,6 +97,12 @@
               "ailita/session-management",
               "ailita/merchant-roles"
             ]
+          },
+          {
+            "group": "Component reference",
+            "pages": [
+              "ailita/profile-module"
+            ]
           }
         ]
       }
