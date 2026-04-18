@@ -1,6 +1,6 @@
 ---
-title: "Hooks: useAuth & useUser"
-description: "Retrieve and manage the authenticated user's identity and profile data."
+title: "Hooks Reference"
+description: "All five hooks — useAuth, useUser, useSessions, useMerchant, and useRoles — with return shapes and usage examples."
 icon: "brackets-curly"
 ---
 
@@ -321,14 +321,283 @@ interface EmailChangeResponse {
 }
 ```
 
-## Next steps
+---
 
-<Card title="Signup & Forgot Password" icon="user-plus" href="/ailita/signup-forgot-password">
-  Walk through SignupForm and ForgotPasswordForm integration, including post-signup
-  redirect and OTP verification flows.
+## useSessions
+
+`useSessions` fetches the authenticated user's active sessions on mount and exposes revoke
+methods. It is the hook behind the `SessionsList` profile component — use it directly when
+you need programmatic session management rather than the prebuilt UI.
+
+### Return Shape
+
+```typescript
+return {
+  sessions,   // SessionResponse[]
+  isLoading,  // boolean
+  error,      // string | null
+  refresh,    // () => Promise<void>
+  revoke,     // (sessionId: string) => Promise<void>
+  revokeAll,  // () => Promise<void>
+}
+```
+
+<ParamField body="sessions" type="SessionResponse[]">
+  Array of active sessions for the current user. Each entry includes a `current: boolean`
+  field that identifies the session belonging to this device/browser.
+</ParamField>
+
+<ParamField body="isLoading" type="boolean">
+  `true` while the initial sessions fetch or a revoke operation is in progress.
+</ParamField>
+
+<ParamField body="error" type="string | null">
+  Last error message from a fetch or revoke operation.
+</ParamField>
+
+<ParamField body="refresh" type="() => Promise<void>">
+  Re-fetches `GET /users/me/sessions` and updates the local sessions array.
+</ParamField>
+
+<ParamField body="revoke" type="(sessionId: string) => Promise<void>">
+  Revokes a single session by ID. Removes the session from local state on success. Throws
+  on error — wrap in `try/catch` if you need to handle revoke failures.
+</ParamField>
+
+<ParamField body="revokeAll" type="() => Promise<void>">
+  Revokes all sessions (except the current one, depending on backend behavior). Clears the
+  local sessions array on success. Throws on error.
+</ParamField>
+
+<Card title="Session Management Guide" icon="clock-rotate-left" href="/ailita/session-management">
+  Full useSessions usage guide including onSessionExpired contract and the complete sessions list UI example.
 </Card>
 
-<Card title="Auth Flows" icon="arrows-split-up-and-left" href="/ailita/auth-flows">
-  Understand the full login, challenge, and token refresh lifecycle — useful if you
-  arrived at this page before reading the flow overview.
+---
+
+## useMerchant
+
+`useMerchant` is an admin hook for reading and updating the tenant merchant record. It is
+used inside `MerchantSettings` — use it directly when you need to read merchant configuration
+or build custom settings UI.
+
+### Return Shape
+
+```typescript
+return {
+  merchant,     // MerchantResponse | null
+  isLoading,    // boolean
+  error,        // string | null
+  refresh,      // () => Promise<void>
+  update,       // (data: UpdateMerchantRequest) => Promise<MerchantResponse>
+  addApiKey,    // (label: string) => Promise<GenerateApiKeyResponse>
+  removeApiKey, // (keyId: string) => Promise<void>
+  clearError,   // () => void
+}
+```
+
+<ParamField body="merchant" type="MerchantResponse | null">
+  The loaded merchant record. `null` while loading on mount. Contains tenant settings
+  including `primaryColor`, `secondaryColor`, `loginMode`, `signupMode`, and `totpAllowed`.
+</ParamField>
+
+<ParamField body="isLoading" type="boolean">
+  `true` during the initial fetch and while an `update` call is in progress.
+</ParamField>
+
+<ParamField body="error" type="string | null">
+  Last error message from any operation. Clear manually with `clearError()` or automatically
+  at the start of the next operation.
+</ParamField>
+
+<ParamField body="refresh" type="() => Promise<void>">
+  Re-fetches `GET /merchants/me` and updates the local merchant state.
+</ParamField>
+
+<ParamField body="update" type="(data: UpdateMerchantRequest) => Promise<MerchantResponse>">
+  Updates the merchant record via `PATCH /merchants/:id`. Returns the updated merchant.
+
+  <Note>
+    Calling `update()` automatically applies the updated `primaryColor` and `secondaryColor`
+    to the current session via `applyTheme()`. You do not need to call any theme method
+    manually — the UI updates immediately.
+  </Note>
+</ParamField>
+
+<ParamField body="addApiKey" type="(label: string) => Promise<GenerateApiKeyResponse>">
+  Generates a new API key for this merchant. Throws `'No merchant loaded'` if called before
+  mount completes — guard with `if (!merchant) return` before calling.
+</ParamField>
+
+<ParamField body="removeApiKey" type="(keyId: string) => Promise<void>">
+  Revokes an API key by its ID. Throws `'No merchant loaded'` if the merchant has not
+  loaded yet.
+</ParamField>
+
+<ParamField body="clearError" type="() => void">
+  Manually clear the `error` state.
+</ParamField>
+
+### Quick Example
+
+```tsx
+import { useMerchant } from 'ailita-library'
+
+function MerchantNameForm() {
+  const { merchant, update, isLoading, error } = useMerchant()
+
+  const handleSave = async (newName: string) => {
+    await update({ name: newName })
+    // merchant state is updated — no manual refetch needed
+  }
+
+  if (!merchant) return null
+
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); handleSave(e.currentTarget.name.value) }}>
+      <input name="name" defaultValue={merchant.name} />
+      <button disabled={isLoading}>{isLoading ? 'Saving...' : 'Save'}</button>
+      {error && <p className="text-red-600">{error}</p>}
+    </form>
+  )
+}
+```
+
+---
+
+## useRoles
+
+`useRoles` is an admin hook for managing role definitions and assigning roles to users.
+It fetches all roles for the app on mount (both SYSTEM and MERCHANT roles). Use it to
+build role management UI in admin dashboards.
+
+### Return Shape
+
+```typescript
+return {
+  roles,     // RoleResponse[]
+  isLoading, // boolean
+  error,     // string | null
+  refresh,   // () => Promise<void>
+  add,       // (data: CreateRoleRequest) => Promise<RoleResponse>
+  remove,    // (roleId: string) => Promise<void>
+  assign,    // (data: AssignRoleRequest) => Promise<void>
+  revoke,    // (userId: string, roleId: string) => Promise<void>
+}
+```
+
+<ParamField body="roles" type="RoleResponse[]">
+  All roles defined for this app — both `SYSTEM` (built-in) and `MERCHANT` (custom) roles.
+</ParamField>
+
+<ParamField body="isLoading" type="boolean">
+  `true` during the initial roles fetch.
+</ParamField>
+
+<ParamField body="error" type="string | null">
+  Last error message from a fetch operation.
+</ParamField>
+
+<ParamField body="refresh" type="() => Promise<void>">
+  Re-fetches `GET /roles` and updates the local roles array.
+</ParamField>
+
+<ParamField body="add" type="(data: CreateRoleRequest) => Promise<RoleResponse>">
+  Creates a new MERCHANT-owned role and appends it to the local roles array. Returns the
+  created role including its generated `id`.
+</ParamField>
+
+<ParamField body="remove" type="(roleId: string) => Promise<void>">
+  Deletes a MERCHANT-owned role and removes it from the local array.
+
+  <Note>
+    Only MERCHANT-owned roles (`role.owner === 'MERCHANT'`) can be deleted. SYSTEM roles
+    are built-in and cannot be removed.
+  </Note>
+</ParamField>
+
+<ParamField body="assign" type="(data: AssignRoleRequest) => Promise<void>">
+  Assigns a role to a user. Accepts an optional `expiresAt` ISO 8601 string for
+  time-limited role grants. Does NOT update the local roles array — the role list is
+  app-level, not user-level.
+</ParamField>
+
+<ParamField body="revoke" type="(userId: string, roleId: string) => Promise<void>">
+  Removes a role from a user. Does NOT update the local roles array.
+</ParamField>
+
+### SYSTEM vs MERCHANT Role Hierarchy
+
+| Owner | Description | Can be deleted | Example |
+|-------|-------------|----------------|---------|
+| `SYSTEM` | Built-in roles defined by the ailita backend | No | `ADMIN`, `USER` |
+| `MERCHANT` | Custom roles created by your tenant | Yes, via `remove()` | `MODERATOR`, `PREMIUM` |
+
+<Note>
+  The `priority` field determines role precedence when conflicts occur — lower number =
+  higher priority. SYSTEM roles typically have priority 1–10; assign MERCHANT roles
+  priorities starting at 100 to avoid conflicts.
+</Note>
+
+### Role Checking vs Role Management
+
+<Warning>
+  Do not use `useRoles` to check whether the current user has a specific role. `useRoles`
+  is for managing role definitions and assignments — not for access control decisions.
+
+  For route protection, use `AuthGuard` with `requiredRoles`:
+
+  ```tsx
+  <AuthGuard fallback={<Navigate to='/login' />} requiredRoles={['ADMIN']}>
+    <AdminPanel />
+  </AuthGuard>
+  ```
+
+  `requiredRoles` uses AND logic — the user must have ALL listed roles. For programmatic
+  role checks, read `useAuthContext().roles` directly.
+</Warning>
+
+### Quick Example: Assigning a Role
+
+```tsx
+import { useMerchant, useRoles } from 'ailita-library'
+
+function AssignRoleButton({ userId, roleId }: { userId: string; roleId: string }) {
+  const { merchant } = useMerchant()
+  const { assign } = useRoles()
+
+  const handleAssign = async () => {
+    if (!merchant) return
+    await assign({
+      userId,
+      roleId,
+      app: merchant.app,
+      mid: merchant.mid,
+    })
+  }
+
+  return <button onClick={handleAssign}>Assign role</button>
+}
+```
+
+<Note>
+  `assign()` requires `app` and `mid` values from `useMerchant().merchant`. Do not hardcode
+  these — always read them from the loaded merchant record to ensure you are assigning to
+  the correct tenant.
+</Note>
+
+---
+
+## Next steps
+
+<Card title="Session Management" icon="clock-rotate-left" href="/ailita/session-management">
+  onSessionExpired contract, useSessions full guide, and active sessions list example.
+</Card>
+
+<Card title="Merchant & Roles Reference" icon="building" href="/ailita/merchant-roles">
+  Deep-dive reference for useMerchant and useRoles with API key management and role assignment patterns.
+</Card>
+
+<Card title="Auth Flows" icon="key" href="/ailita/auth-flows">
+  Complete login state machine and ChallengeView dual-response contract.
 </Card>
