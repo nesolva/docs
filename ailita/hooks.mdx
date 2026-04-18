@@ -3,3 +3,332 @@ title: "Hooks: useAuth & useUser"
 description: "Retrieve and manage the authenticated user's identity and profile data."
 icon: "brackets-curly"
 ---
+
+Both hooks require `<AilitaProvider>` and `<AuthProvider>` ancestors. These are already
+provided if you used the standard `<AilitaProvider>` setup — it wraps children with both
+providers automatically. `useAuth` provides authentication state and actions. `useUser`
+provides profile management for the signed-in user.
+
+## useAuth
+
+`useAuth` is the primary hook for authentication state and actions. It returns the current
+user, authentication status, and methods to login, logout, and signup.
+
+### Return Shape
+
+```typescript
+interface UseAuthReturn {
+  user: UserResponse | null
+  isAuthenticated: boolean
+  isLoading: boolean
+  login: (email: string, password?: string, extraData?: Partial<LoginRequest>) => Promise<LoginResponse>
+  logout: () => Promise<void>
+  signup: (data: Omit<SignupRequest, 'app' | 'mid'>) => Promise<SignupResponse | null>
+  error: string | null
+  clearError: () => void
+}
+```
+
+<ParamField body="user" type="UserResponse | null">
+  The authenticated user object. `null` while loading or when not authenticated.
+
+  <Warning>
+    **This is the authoritative source for user data.** After login, `useAuth` calls `getMe()`
+    to populate `user` with the full `UserResponse` from the server. Do not store the `userId`
+    from `LoginForm.onSuccess` and fetch user data yourself — `useAuth().user` is already
+    populated and stays in sync across components.
+  </Warning>
+</ParamField>
+
+<ParamField body="isAuthenticated" type="boolean">
+  `true` when the user is logged in with valid tokens.
+</ParamField>
+
+<ParamField body="isLoading" type="boolean">
+  `true` during silent token refresh on mount and during login/logout operations.
+
+  <Note>
+    On app mount, `isLoading` is `true` for 200–500 ms while the library attempts silent
+    refresh. This is why `AuthGuard` requires a `loadingFallback` — without it, the
+    flash-redirect anti-pattern occurs (the user sees a redirect to `/login` before the
+    refresh completes).
+  </Note>
+</ParamField>
+
+<ParamField body="login" type="(email, password?, extraData?) => Promise<LoginResponse>">
+  Initiates login. Returns the full `LoginResponse` for branch detection (e.g., checking
+  whether a challenge is required). Tokens are set automatically on a successful password
+  login. `extraData` passes additional fields (such as `loginMode`) to the API.
+</ParamField>
+
+<ParamField body="logout" type="() => Promise<void>">
+  Calls the server logout endpoint, then clears local tokens and auth state. Logout errors
+  are swallowed — local state is always cleaned up.
+</ParamField>
+
+<ParamField body="signup" type="(data: Omit<SignupRequest, 'app' | 'mid'>) => Promise<SignupResponse | null>">
+  Initiates signup. The `app` and `mid` fields are injected from the merchant context
+  automatically — you do not need to pass them.
+</ParamField>
+
+<ParamField body="error" type="string | null">
+  Last error message from a login, signup, or logout operation. Cleared automatically
+  at the start of the next attempt.
+</ParamField>
+
+<ParamField body="clearError" type="() => void">
+  Manually clear the `error` state (useful when navigating away from a form).
+</ParamField>
+
+### Common Patterns
+
+<CodeGroup>
+
+```tsx Next.js App Router
+'use client'
+import { useAuth } from 'ailita-library'
+
+export default function DashboardPage() {
+  const { user, isAuthenticated, logout } = useAuth()
+
+  if (!isAuthenticated) return null // AuthGuard handles redirect
+
+  return (
+    <div>
+      <h1>Welcome, {user?.firstName}</h1>
+      <p>{user?.email}</p>
+      <button onClick={logout}>Log out</button>
+    </div>
+  )
+}
+```
+
+```tsx React Router
+import { useAuth } from 'ailita-library'
+
+function DashboardPage() {
+  const { user, isAuthenticated, logout } = useAuth()
+
+  if (!isAuthenticated) return null // AuthGuard handles redirect
+
+  return (
+    <div>
+      <h1>Welcome, {user?.firstName}</h1>
+      <p>{user?.email}</p>
+      <button onClick={logout}>Log out</button>
+    </div>
+  )
+}
+```
+
+</CodeGroup>
+
+<Note>
+  `user` may be `null` briefly during the initial silent refresh, even inside an
+  AuthGuard-protected route. Always use optional chaining (`user?.firstName`) or check
+  `isAuthenticated` first.
+</Note>
+
+### Anti-pattern: userId from onSuccess
+
+A common mistake is using the `userId` returned by `onSuccess` to fetch user data
+independently. This creates a redundant network request and a separate copy of user state
+that can drift from what the library manages.
+
+<Warning>
+  Do not fetch user data from `onSuccess`. `useAuth().user` is already populated after
+  login completes — no additional fetch is needed.
+</Warning>
+
+```tsx
+// WRONG — do not do this
+<LoginForm
+  onSuccess={async (userId) => {
+    const response = await fetch(`/api/users/${userId}`)
+    const userData = await response.json()
+    setUser(userData) // Redundant — useAuth().user already has this
+  }}
+/>
+```
+
+```tsx
+// CORRECT — useAuth().user is already populated after login
+<LoginForm onSuccess={() => navigate('/dashboard')} />
+
+// In your dashboard:
+const { user } = useAuth()  // Already populated with full UserResponse
+```
+
+---
+
+## useUser
+
+`useUser` provides methods for the authenticated user to manage their own profile, password,
+email, and TOTP settings. It shares the same `user` object as `useAuth` — both read from
+`AuthContext`, so updates are reflected everywhere immediately.
+
+### Return Shape
+
+```typescript
+return {
+  user,           // UserResponse | null
+  isLoading,      // boolean
+  error,          // string | null
+  refreshProfile, // () => Promise<UserResponse>
+  updateProfile,  // (data: UpdateUserRequest) => Promise<UserResponse>
+  updatePassword, // (data: ChangePasswordRequest) => Promise<void>
+  startEmailChange, // (newEmail: string) => Promise<EmailChangeResponse>
+  initTotp,       // () => Promise<TotpSetupResponse>
+  verifyTotp,     // (code: string) => Promise<void>
+  removeTotp,     // (code: string) => Promise<void>
+  clearError,     // () => void
+}
+```
+
+<ParamField body="user" type="UserResponse | null">
+  The same reference as `useAuth().user`. Reflects the latest profile state.
+</ParamField>
+
+<ParamField body="isLoading" type="boolean">
+  Loading state for profile operations (not auth loading). `true` while an update,
+  password change, email change, or TOTP operation is in progress.
+</ParamField>
+
+<ParamField body="error" type="string | null">
+  Last error message from a profile operation. Cleared automatically on the next attempt.
+</ParamField>
+
+<ParamField body="refreshProfile" type="() => Promise<UserResponse>">
+  Re-fetches `GET /users/me` and updates the shared user state. Use this after external
+  changes or to force a sync with the server.
+</ParamField>
+
+<ParamField body="updateProfile" type="(data: UpdateUserRequest) => Promise<UserResponse>">
+  Updates `firstName`, `lastName`, and/or `phone`. Returns the updated user.
+
+  <Note>
+    The shared user state is updated automatically — all components reading `useAuth().user`
+    or `useUser().user` will reflect the change without a page refresh or manual refetch.
+  </Note>
+</ParamField>
+
+<ParamField body="updatePassword" type="(data: ChangePasswordRequest) => Promise<void>">
+  Changes the user's password. Requires `currentPassword` and `newPassword`. If the user
+  has TOTP enabled, `totpCode` is also required.
+</ParamField>
+
+<ParamField body="startEmailChange" type="(newEmail: string) => Promise<EmailChangeResponse>">
+  Initiates an email address change. Returns a `challengeId` that you pass to `ChallengeView`
+  to complete verification via the OTP sent to the new address.
+</ParamField>
+
+<ParamField body="initTotp" type="() => Promise<TotpSetupResponse>">
+  Starts TOTP setup. Returns a `qrUri` to render as a QR code and `backupCodes` to display
+  to the user before they scan.
+</ParamField>
+
+<ParamField body="verifyTotp" type="(code: string) => Promise<void>">
+  Confirms TOTP setup with a 6-digit code from the authenticator app. Automatically calls
+  `refreshProfile()` — `user.totpEnabled` will be `true` after this resolves.
+</ParamField>
+
+<ParamField body="removeTotp" type="(code: string) => Promise<void>">
+  Disables TOTP with a 6-digit verification code. Automatically calls `refreshProfile()` —
+  `user.totpEnabled` will be `false` after this resolves.
+</ParamField>
+
+<ParamField body="clearError" type="() => void">
+  Manually clear the `error` state.
+</ParamField>
+
+### Profile Update Example
+
+```tsx
+import { useState } from 'react'
+import { useUser } from 'ailita-library'
+
+function ProfilePage() {
+  const { user, updateProfile, isLoading, error } = useUser()
+  const [firstName, setFirstName] = useState(user?.firstName ?? '')
+
+  const handleSave = async () => {
+    await updateProfile({ firstName })
+    // user state is already updated — no need to refetch
+  }
+
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); handleSave() }}>
+      <input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+      <button disabled={isLoading}>{isLoading ? 'Saving...' : 'Save'}</button>
+      {error && <p className="text-red-600">{error}</p>}
+    </form>
+  )
+}
+```
+
+### Password Change Example
+
+```tsx
+const { updatePassword } = useUser()
+
+await updatePassword({
+  currentPassword: 'old-password',
+  newPassword: 'new-password',
+  totpCode: '123456', // Only required if the user has TOTP enabled
+})
+```
+
+### Key Types
+
+```typescript
+interface UserResponse {
+  id: string
+  email: string
+  firstName: string
+  lastName: string
+  phone: string | null
+  status: UserStatus
+  emailStatus: EmailStatus
+  totpEnabled: boolean
+  app: string
+  mid: string
+  createdAt: string
+  updatedAt: string
+  lastLoginAt?: string | null
+  roles?: RoleResponse[]
+}
+
+interface UpdateUserRequest {
+  firstName?: string
+  lastName?: string
+  phone?: string
+}
+
+interface ChangePasswordRequest {
+  currentPassword: string
+  newPassword: string
+  totpCode?: string
+}
+
+interface TotpSetupResponse {
+  qrUri: string
+  backupCodes: string[]
+}
+
+interface EmailChangeResponse {
+  challengeId: string
+  devToken?: string
+}
+```
+
+## Next steps
+
+<Card title="Signup & Forgot Password" icon="user-plus" href="/ailita/signup-forgot-password">
+  Walk through SignupForm and ForgotPasswordForm integration, including post-signup
+  redirect and OTP verification flows.
+</Card>
+
+<Card title="Auth Flows" icon="arrows-split-up-and-left" href="/ailita/auth-flows">
+  Understand the full login, challenge, and token refresh lifecycle — useful if you
+  arrived at this page before reading the flow overview.
+</Card>
