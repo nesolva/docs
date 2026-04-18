@@ -1,0 +1,217 @@
+---
+title: "Challenge Module"
+description: "ChallengeView — a reusable 6-digit OTP input used for email verification, 2FA, login OTP, and account recovery challenges"
+---
+
+`ChallengeView` is the single OTP component used across all verification flows in ailita-library — email change confirmation, TOTP entry, login OTP, and password recovery all render it. It handles auto-submission, resend cooldown, attempt tracking, and the dual-response discriminated union from a single interface. You never need to build a digit input or countdown timer yourself — mount `ChallengeView` with a `challengeId` and the correct callback, and the rest is handled internally.
+
+## Props
+
+<ParamField body="challengeId" type="string" required>
+  The ID of the challenge to verify. Obtained from whatever API call created the challenge — for example, `LoginResponse.challengeId`, `EmailChangeResponse.challengeId`, or `ForgotPasswordResponse.challengeId`. Pass this directly from the response that triggered the challenge flow.
+</ParamField>
+
+<ParamField body="onComplete" type="(result: ChallengeResponse) => void">
+  Called when a non-login challenge completes successfully. Receives the full `ChallengeResponse` with `status: 'COMPLETED'`. Use this for `SIGNUP`, `RECOVERY`, `FRICTION`, and `EMAIL_CHANGE` challenge types. Do not use this for `LOGIN_OTP` challenges — see `onLoginSuccess` below.
+</ParamField>
+
+<ParamField body="onLoginSuccess" type="(result: LoginResponse) => void">
+  Called when a `LOGIN_OTP` challenge completes and tokens have been set in the client. Receives the `LoginResponse` with a valid `accessToken`. Use this instead of `onComplete` when rendering `ChallengeView` for a login flow. By the time this callback fires, the access token and refresh token are already stored in memory — you can navigate directly to the authenticated area.
+</ParamField>
+
+<ParamField body="title" type="string">
+  Optional heading override. When omitted, defaults to `"Ingresa tu código 2FA"` when `type='TOTP'`, or `"Verifica tu email"` when `type='EMAIL'`.
+</ParamField>
+
+<ParamField body="subtitle" type="string">
+  Optional subtitle override. When omitted, defaults to authenticator-app instructions for TOTP, or "enter the 6-digit code sent to your email" for EMAIL.
+</ParamField>
+
+<ParamField body="type" type="'EMAIL' | 'TOTP'">
+  Controls UI mode. Default: `'EMAIL'`. When `'TOTP'`: the resend/regenerate button is hidden — TOTP codes rotate on a time-based schedule and cannot be re-requested. When `'EMAIL'`: a countdown timer and "Resend code" button appear once the cooldown expires and `canRegenerate` is true.
+</ParamField>
+
+## Dual-response contract
+
+`ChallengeView` handles two distinct challenge categories, and each calls a different callback. Understanding which to implement is critical — using the wrong callback for a given challenge type will result in a broken integration.
+
+| Challenge type | `type` prop | Callback to implement | Response type |
+|---|---|---|---|
+| `LOGIN_OTP` | `'EMAIL'` | `onLoginSuccess` | `LoginResponse` |
+| `SIGNUP` | `'EMAIL'` | `onComplete` | `ChallengeResponse` |
+| `RECOVERY` | `'EMAIL'` | `onComplete` | `ChallengeResponse` |
+| `FRICTION` | `'EMAIL'` or `'TOTP'` | `onComplete` | `ChallengeResponse` |
+| `EMAIL_CHANGE` | `'EMAIL'` | `onComplete` | `ChallengeResponse` |
+
+<Warning>
+  Never use `onComplete` for a `LOGIN_OTP` challenge. The `onComplete` callback fires only for non-login challenges — the `ChallengeResponse` it receives does **not** contain tokens. For `LOGIN_OTP`, use `onLoginSuccess`, which fires after tokens are set in the client. If you accidentally wire `onComplete` for a login challenge, the callback will never fire and the user will appear stuck on the OTP screen.
+</Warning>
+
+The type guard that distinguishes the two response types (shown below for reference — you do not call this directly):
+
+```typescript
+// From useChallenge.ts — this is how the library detects which callback to call
+function isLoginResponse(data: ChallengeResponse | LoginResponse): data is LoginResponse {
+  return 'accessToken' in data
+}
+```
+
+<Note>
+  `ChallengeView` calls both callbacks through the `complete()` function in `useChallenge`. The hook resolves `completeChallenge(challengeId, value)` from the API, then checks `'accessToken' in data` to determine which callback to invoke. You never interact with the type guard directly — just implement the right callback for your use case.
+</Note>
+
+## Expiry and resend handling
+
+Challenges have a TTL (`expiresAt` from `ChallengeResponse`). `ChallengeView` surfaces two expiry-related behaviors depending on the challenge type.
+
+### Resend countdown (EMAIL type only)
+
+After the challenge is created, a cooldown period prevents immediate resend (`canRegenerateAt` from `ChallengeResponse`). `ChallengeView` tracks this with a countdown timer sourced from `useChallenge.secondsUntilRegenerate`. The "Resend code" button is hidden during the countdown and appears only when the timer hits zero **and** `canRegenerate` is `true`.
+
+<Warning>
+  Resend can only happen once per challenge — `canRegenerate` is set to `false` after the first regenerate call and the backend will reject further regenerate requests. If the user lets the challenge expire without completing it **and** has already used their one resend, they must restart the flow entirely (for example, go back to `LoginForm` or `EmailChangeForm` to generate a new challenge). Your error handling should account for this dead end.
+</Warning>
+
+### Attempt limit
+
+The component displays "Intento N de M" when `attempts > 0`. When `attempts` reaches `maxAttempts`, the backend marks the challenge as `FAILED` and subsequent submit calls will error. The component does not auto-redirect — your `onComplete` or `onLoginSuccess` handler is responsible for handling the `FAILED` state and offering the user a way to restart the flow.
+
+### TOTP (no regenerate)
+
+When `type='TOTP'`, the resend/regenerate section is entirely hidden. TOTP codes rotate on a time-based schedule — regenerating does not apply and will error if called. If the user's authenticator app is generating wrong codes, the issue is clock drift: direct the user to sync their device clock in system settings. Do not render `ChallengeView` with `type='EMAIL'` for a TOTP challenge — the "Resend code" button will appear and fail on click since regenerate is not valid for authenticator-app challenges.
+
+## Usage examples
+
+### Login flow (LOGIN_OTP)
+
+```tsx
+import { ChallengeView } from 'ailita-library'
+import { useRouter } from 'next/navigation'
+
+function LoginChallengePage({ challengeId }: { challengeId: string }) {
+  const router = useRouter()
+
+  return (
+    <ChallengeView
+      challengeId={challengeId}
+      type="EMAIL"
+      onLoginSuccess={() => {
+        // Tokens are already set in the client — navigate to the app
+        router.replace('/dashboard')
+      }}
+    />
+  )
+}
+```
+
+### Email change confirmation (non-login)
+
+```tsx
+import { ChallengeView } from 'ailita-library'
+import type { ChallengeResponse } from 'ailita-library'
+
+function EmailChangeChallengeStep({
+  challengeId,
+  onDone,
+}: {
+  challengeId: string
+  onDone: () => void
+}) {
+  const handleComplete = (result: ChallengeResponse) => {
+    if (result.status === 'COMPLETED') {
+      onDone()
+    }
+  }
+
+  return (
+    <ChallengeView
+      challengeId={challengeId}
+      type="EMAIL"
+      onComplete={handleComplete}
+    />
+  )
+}
+```
+
+### 2FA verification (TOTP)
+
+```tsx
+import { ChallengeView } from 'ailita-library'
+
+function TotpChallengeStep({ challengeId, onComplete }) {
+  return (
+    <ChallengeView
+      challengeId={challengeId}
+      type="TOTP"
+      onComplete={onComplete}
+    />
+  )
+}
+```
+
+<Note>
+  `ChallengeView` auto-submits when all 6 digits are filled — the user does not need to press the Verify button. The button remains visible as a fallback for cases where focus is lost or auto-submit does not trigger. Paste support is built in: pasting a 6-digit string into any digit input fills all slots and triggers auto-submit automatically.
+</Note>
+
+## ChallengeResponse type
+
+```typescript
+interface ChallengeResponse {
+  id: string
+  userId: string
+  type: 'SIGNUP' | 'RECOVERY' | 'FRICTION' | 'EMAIL_CHANGE' | 'LOGIN_OTP'
+  channel: 'EMAIL' | 'SMS' | 'AUTHENTICATOR_APP'
+  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'EXPIRED'
+  attempts: number
+  maxAttempts: number
+  canRegenerate: boolean
+  canRegenerateAt: string   // ISO 8601
+  expiresAt: string         // ISO 8601
+  completedAt: string | null
+}
+```
+
+## LoginResponse type
+
+For `LOGIN_OTP` challenges, the `onLoginSuccess` callback receives a `LoginResponse`. By the time the callback fires, `accessToken` and `refreshToken` have already been stored in the client — the response is passed to your callback for inspection only (e.g., if you need to redirect or update local state).
+
+```typescript
+interface LoginResponse {
+  accessToken: string | null
+  refreshToken: string | null
+  requiresTotp: boolean
+  pendingToken?: string | null
+  requiresTotpSetup: boolean
+  challengeRequired: boolean
+  challengeId: string | null
+}
+```
+
+## Error handling
+
+When a user submits an incorrect code, `useChallenge` catches the error, increments `attempts`, and displays the backend error message inline. `ChallengeView` resets the digit inputs automatically so the user can retry without clearing manually.
+
+Your `onComplete` and `onLoginSuccess` callbacks are only invoked on success — you do not need to handle errors inside them. If you need to respond to exhausted attempts or an expired challenge, check `result.status` in `onComplete`:
+
+```tsx
+const handleComplete = (result: ChallengeResponse) => {
+  if (result.status === 'COMPLETED') {
+    onDone()
+  } else if (result.status === 'FAILED') {
+    // Max attempts reached — offer user a way to restart
+    onFailed()
+  }
+}
+```
+
+For `LOGIN_OTP` challenges, a `FAILED` status means the login attempt is rejected. Redirect the user back to `LoginForm` to start a new login session.
+
+## Next steps
+
+<Card title="Auth Flows" href="/ailita/auth-flows">
+  Login state machine and ChallengeView integration from the LoginForm perspective
+</Card>
+
+<Card title="Profile Module" href="/ailita/profile-module">
+  EmailChangeForm and TOTPSetup — components that use ChallengeView internally
+</Card>

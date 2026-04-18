@@ -102,7 +102,8 @@
             "group": "Component reference",
             "pages": [
               "ailita/profile-module",
-              "ailita/admin-module"
+              "ailita/admin-module",
+              "ailita/challenge-module"
             ]
           }
         ]
