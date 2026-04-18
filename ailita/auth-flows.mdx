@@ -3,3 +3,221 @@ title: "Auth Flows"
 description: "Complete login state machine, challenge handling, and TOTP verification flows."
 icon: "key"
 ---
+
+`LoginForm` manages the entire authentication flow internally through a multi-step state machine. As a developer, your responsibility is wiring the output callbacks — routing the user after success, redirecting to TOTP setup when required, and navigating to signup or password recovery. You do not manage individual steps or render challenge UI unless you explicitly take over challenge rendering via `onChallengeRequired`.
+
+## Login State Machine
+
+`LoginForm` uses an internal `step` state with five possible values: `email`, `credential`, `challenge`, `totp`, and `totp-setup`. The form advances through these steps based on the `LoginResponse` returned by `POST /auth/login`.
+
+```
+                    ┌─────────────────────────────────────┐
+                    │            LoginResponse             │
+                    └──────────────┬──────────────────────┘
+                                   │
+         email ──> credential ─────┤
+           │                       ├─ accessToken present ──────────> SUCCESS (onSuccess fires)
+           │ (OTP_EMAIL mode)       ├─ challengeRequired + challengeId -> challenge (ChallengeView)
+           │                       ├─ requiresTotp + pendingToken ──> totp (TOTP input)
+           └───────────────────────┴─ requiresTotpSetup ────────────> totp-setup (onTotpSetupRequired)
+```
+
+In `OTP_EMAIL` mode, the `credential` step is skipped — the form calls the login API directly after email entry, and the backend responds with a challenge.
+
+## LoginResponse Branches
+
+```typescript
+interface LoginResponse {
+  accessToken: string | null
+  refreshToken: string | null
+  requiresTotp: boolean
+  pendingToken?: string | null
+  requiresTotpSetup: boolean
+  challengeRequired: boolean
+  challengeId: string | null
+}
+```
+
+| Branch | Condition | What happens | Developer action |
+|--------|-----------|--------------|-----------------|
+| Success | `accessToken` present | Tokens set automatically, `onSuccess(userId)` fires | Navigate to dashboard |
+| Challenge required | `challengeRequired && challengeId` | `ChallengeView` renders inline (or `onChallengeRequired` fires if provided) | Handle inline or via callback |
+| TOTP required | `requiresTotp && pendingToken` | TOTP code input renders; verified via `POST /auth/totp/verify` | None — handled internally |
+| TOTP setup required | `requiresTotpSetup` | `onTotpSetupRequired()` fires | Navigate user to TOTP setup screen |
+
+## LoginForm Props
+
+<ParamField body="layout" type="'full-screen' | 'side-screen'">
+  Controls the visual layout of the form. `full-screen` centers the form on a gray background with a card container. `side-screen` renders a split view with a branded color panel on the left and the form on the right. Defaults to `'full-screen'`.
+</ParamField>
+
+<ParamField body="onSuccess" type="(userId: string) => void">
+  Called after successful authentication — tokens are set and `getMe()` has resolved. The `userId` string is derived from the authenticated user record.
+</ParamField>
+
+<Warning>
+  Do not use the `userId` from `onSuccess` as your user data source. It is a navigation signal only. Always read user data from `useAuth().user` — it is populated by `getMe()` after token exchange and is the authoritative source.
+</Warning>
+
+<ParamField body="onSignupClick" type="() => void">
+  Optional. Called when the user clicks "Create account" in the email step. Only rendered when the merchant's `signupMode` is `OPEN`. Wire this to navigate to your signup page.
+</ParamField>
+
+<ParamField body="onForgotPasswordClick" type="() => void">
+  Optional. Called when the user clicks "Forgot password?" in the credential step. Only rendered when the merchant's `allowPasswordRecovery` is enabled. Wire this to navigate to your password recovery page.
+</ParamField>
+
+<ParamField body="onTotpSetupRequired" type="() => void">
+  Optional. Called when the backend response includes `requiresTotpSetup: true`. The form enters a holding state — navigate the user to your TOTP setup page.
+</ParamField>
+
+<ParamField body="onChallengeRequired" type="(challengeId: string) => void">
+  Optional. Called when the backend responds with `challengeRequired: true`. Receives the `challengeId` needed to render `ChallengeView`.
+</ParamField>
+
+<Note>
+  If `onChallengeRequired` is provided, `LoginForm` does **not** render the inline `ChallengeView`. You must render `ChallengeView` yourself with the `challengeId` passed to this callback.
+</Note>
+
+## ChallengeView Dual-Response Contract
+
+`POST /challenges/:id/complete` can return one of two response shapes depending on the challenge type:
+
+- **`LoginResponse`** — returned for `LOGIN_OTP` challenges (passwordless email OTP login). Contains `accessToken` and `refreshToken`.
+- **`ChallengeResponse`** — returned for `FRICTION`, `SIGNUP`, and `EMAIL_CHANGE` challenges. Contains status only — no tokens.
+
+The library detects the response shape at runtime using a type guard:
+
+```typescript
+function isLoginResponse(data: ChallengeResponse | LoginResponse): data is LoginResponse {
+  return 'accessToken' in data
+}
+```
+
+`ChallengeView` exposes two separate callbacks to handle each case:
+
+```typescript
+<ChallengeView
+  challengeId={challengeId}
+  type="EMAIL"
+  onLoginSuccess={(res) => {
+    // LOGIN_OTP challenge — tokens already set by useChallenge
+    // res is LoginResponse with accessToken + refreshToken
+    router.push('/dashboard')
+  }}
+  onComplete={(res) => {
+    // FRICTION / SIGNUP / EMAIL_CHANGE challenge
+    // res is ChallengeResponse — no tokens, just status
+    // For login: re-attempt login to get tokens
+    // For signup: account is now verified
+  }}
+/>
+```
+
+<Warning>
+  Never treat `onComplete` as a login success callback. For login challenges of type `FRICTION`, `onComplete` means the challenge passed — you must re-attempt login with the same credentials to receive tokens. Only `onLoginSuccess` provides tokens.
+</Warning>
+
+Inside `LoginForm`, both callbacks are used. When the inline `ChallengeView` fires `onLoginSuccess`, it means the backend confirmed `LOGIN_OTP` and returned tokens directly. When it fires `onComplete`, it means a `FRICTION` challenge was resolved and the form re-calls `handleLoginAttempt` with the stored credentials to complete authentication.
+
+## ChallengeView Props
+
+<ParamField body="challengeId" type="string">
+  Required. The challenge ID returned by the login API when `challengeRequired` is true. Pass it directly from `LoginResponse.challengeId` or from the `onChallengeRequired` callback.
+</ParamField>
+
+<ParamField body="onComplete" type="(result: ChallengeResponse) => void">
+  Called when a non-login challenge completes successfully. The result is a `ChallengeResponse` — no tokens are present. Use this for `FRICTION`, `SIGNUP`, and `EMAIL_CHANGE` challenge types.
+</ParamField>
+
+<ParamField body="onLoginSuccess" type="(result: LoginResponse) => void">
+  Called when a `LOGIN_OTP` challenge completes and the backend returns tokens directly. The result is a `LoginResponse` with `accessToken` and `refreshToken` already set in memory by `useChallenge`.
+</ParamField>
+
+<ParamField body="title" type="string">
+  Optional string to override the default challenge dialog title.
+</ParamField>
+
+<ParamField body="subtitle" type="string">
+  Optional string to override the default challenge subtitle / instruction text.
+</ParamField>
+
+<ParamField body="type" type="'EMAIL' | 'TOTP'">
+  The OTP delivery method. Defaults to `'EMAIL'`. Use `'TOTP'` for authenticator-app challenges. `LoginForm` always passes `'EMAIL'` for login challenges.
+</ParamField>
+
+## OTP_EMAIL Login Mode
+
+<Note>
+  The `OTP_EMAIL` login mode (passwordless email OTP) is not yet documented as stable. When `loginMode` is `OTP_EMAIL`, `LoginForm` skips the password step and immediately calls the login API with email only. The backend sends a challenge containing a one-time code. This flow is functional but pending staging verification — do not rely on it for production until confirmed.
+</Note>
+
+## Putting It Together
+
+A standard login page wires only the outcome callbacks. `LoginForm` handles challenge and TOTP steps internally:
+
+```tsx
+import { LoginForm } from 'ailita-library'
+import { useNavigate } from 'react-router-dom' // or next/navigation
+
+export default function LoginPage() {
+  const navigate = useNavigate()
+
+  return (
+    <LoginForm
+      onSuccess={() => navigate('/dashboard')}
+      onSignupClick={() => navigate('/signup')}
+      onForgotPasswordClick={() => navigate('/forgot-password')}
+      onTotpSetupRequired={() => navigate('/settings/2fa')}
+    />
+  )
+}
+```
+
+<Note>
+  `LoginForm` handles challenge and TOTP steps internally. You do not need to render `ChallengeView` yourself unless you provide `onChallengeRequired` to take over challenge rendering.
+</Note>
+
+If your application requires a custom challenge UI (for example, a full-page OTP screen instead of an inline component), use `onChallengeRequired` and render `ChallengeView` yourself:
+
+```tsx
+import { LoginForm, ChallengeView } from 'ailita-library'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+
+export default function LoginPage() {
+  const navigate = useNavigate()
+  const [challengeId, setChallengeId] = useState<string | null>(null)
+
+  if (challengeId) {
+    return (
+      <ChallengeView
+        challengeId={challengeId}
+        type="EMAIL"
+        onLoginSuccess={() => navigate('/dashboard')}
+        onComplete={() => {
+          // FRICTION challenge resolved — re-attempt login externally
+          setChallengeId(null)
+        }}
+      />
+    )
+  }
+
+  return (
+    <LoginForm
+      onSuccess={() => navigate('/dashboard')}
+      onChallengeRequired={(id) => setChallengeId(id)}
+    />
+  )
+}
+```
+
+## Next steps
+
+<Card title="Hooks: useAuth & useUser" icon="brackets-curly" href="/ailita/hooks">
+  Access the authenticated user's identity and profile data after login.
+</Card>
+
+<Card title="Signup & Forgot Password" icon="user-plus" href="/ailita/signup-forgot-password">
+  Account creation, email verification, and password recovery flows.
+</Card>
