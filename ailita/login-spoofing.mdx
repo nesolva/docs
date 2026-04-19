@@ -1,0 +1,201 @@
+---
+title: "Login Spoofing Prevention"
+description: "Protecting your ailita-library integration from iframe embedding, phishing domains, slug/appId attacks, and XSS-based token interception"
+---
+
+Login spoofing attacks target the login page itself — either by embedding it in an attacker-controlled iframe, by impersonating the domain, or by injecting malicious scripts that intercept credentials or tokens before they are used. This page covers each attack vector and what you can do at the integration layer to reduce the risk.
+
+This page covers:
+
+- **Iframe embedding** — `X-Frame-Options` and CSP `frame-ancestors` to prevent clickjacking
+- **Phishing domain attacks** — how to lock your integration to the correct tenant slug and appId
+- **The slug/appId attack vector** — specific to multi-tenant platforms; how look-alike tenant registration can compromise your users
+- **CSP for in-memory token protection** — blocking the script-injection path that bypasses the in-memory storage defense
+- **Library limitations** — an honest disclosure of what ailita-library cannot prevent
+
+## Iframe embedding protection
+
+A login form embedded in an attacker-controlled `<iframe>` allows clickjacking attacks where the user believes they are interacting with the legitimate page but their clicks are captured by an invisible overlay on the attacker's site. Both `X-Frame-Options` and CSP `frame-ancestors` prevent your login page from being embedded in third-party frames.
+
+### X-Frame-Options header
+
+Set this response header on pages that render `LoginForm` or any ailita-library auth component:
+
+```
+X-Frame-Options: DENY
+```
+
+Or to allow same-origin framing only (e.g., your own dashboard embedding a compact login widget):
+
+```
+X-Frame-Options: SAMEORIGIN
+```
+
+<Note>
+  `X-Frame-Options` is widely supported but is superseded by the CSP `frame-ancestors` directive in modern browsers. If you set both, `frame-ancestors` takes precedence in supporting browsers. Set both for maximum compatibility.
+</Note>
+
+### CSP frame-ancestors
+
+Add a `Content-Security-Policy` header with a `frame-ancestors` directive. In Next.js, set this in `next.config.ts`:
+
+```typescript
+// next.config.ts
+const nextConfig = {
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: "frame-ancestors 'none'",
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+        ],
+      },
+    ]
+  },
+}
+export default nextConfig
+```
+
+<Warning>
+  `frame-ancestors 'none'` blocks ALL embedding, including by your own origin. If you intentionally embed a login component in an iframe on your own domain, use `frame-ancestors 'self'` instead. Using `'none'` is the safer default for standalone login pages.
+</Warning>
+
+## Phishing domain protection
+
+A phishing attack presents users with a look-alike domain (e.g., `app-mycompany.com` vs `app.mycompany.com`) that hosts a copy of your login page. At the ailita-library integration layer, the `slug` and `appId` props are the canonical identifiers that bind the login form to a specific tenant.
+
+### Validate slug and appId at startup
+
+Hard-code your expected `slug` and `appId` as constants and assert them at app startup — never derive them dynamically from the URL, query parameters, or localStorage.
+
+```typescript
+// constants/ailita.ts
+export const AILITA_SLUG = 'your-tenant-slug'       // never from URL
+export const AILITA_APP_ID = 'your-tenant-app-id'   // never from URL
+
+// app/providers.tsx
+import { AILITA_SLUG, AILITA_APP_ID } from '@/constants/ailita'
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <AilitaProvider
+      slug={AILITA_SLUG}
+      appId={AILITA_APP_ID}
+      baseUrl={process.env.NEXT_PUBLIC_AILITA_BASE_URL!}
+      onSessionExpired={() => { /* redirect */ }}
+    >
+      {children}
+    </AilitaProvider>
+  )
+}
+```
+
+<Warning>
+  Do NOT read `slug` or `appId` from `window.location`, query parameters, or `localStorage`. An attacker who can influence these values (via open redirect, XSS, or phishing URL manipulation) can redirect the discovery call to a tenant they control.
+</Warning>
+
+### The slug/appId attack vector
+
+ailita-library is a multi-tenant platform. Any party can register a tenant with an arbitrary slug. An attacker who knows your slug can register `your-tenant-slug-support` or `your-tenant-slug-help` on the same platform and obtain a legitimate `appId` for that look-alike tenant.
+
+Here is how the attack unfolds: If your consumer app reads `slug` from the URL (e.g., `?tenant=your-tenant-slug`) and the attacker crafts a phishing URL pointing at their look-alike tenant, `AilitaProvider` will call `GET /auth/discovery?slug=your-tenant-slug-support`, receive a valid response from the attacker's tenant, and inject the attacker's `X-App-ID` and `X-Mid-Key` headers. Credentials submitted via `LoginForm` would then be sent to the attacker's backend.
+
+The discovery call sequence in `AilitaProvider` is:
+
+```typescript
+// From src/providers/AilitaProvider.tsx (simplified)
+apiDiscovery(slug)                          // GET /auth/discovery?slug=<slug>
+  .then((data) => {
+    setTenantConfig(data.app, data.publicApiKey)  // injects X-App-ID and X-Mid-Key
+    setIsReady(true)
+  })
+```
+
+Notice that `setTenantConfig` uses `data.app` from the discovery response — the value the server returns for the given slug — not the consumer-provided `appId` prop. If the slug resolves to an attacker's tenant, the attacker controls `data.app` and `data.publicApiKey`. All subsequent requests carry the attacker's tenant headers.
+
+<Warning>
+  The library has no mechanism to verify that the `slug` and `appId` passed to `AilitaProvider` correspond to YOUR tenant. That verification is your responsibility — hard-code the values as constants (shown above) and never derive them from user-controllable input.
+</Warning>
+
+## CSP headers to protect the in-memory token
+
+The `accessToken` is stored in memory and is not accessible via `localStorage`. However, a script injection that executes in the same browsing context before the library initializes can monkey-patch `XMLHttpRequest` or `fetch` to intercept requests and extract tokens from `Authorization` headers. A strict Content Security Policy prevents untrusted scripts from running.
+
+For more context on the in-memory storage pattern and why XSS is still a threat despite it, see [Token Security Model](/ailita/token-security).
+
+### Recommended CSP
+
+```typescript
+// next.config.ts — example strict CSP for a Next.js app
+const csp = [
+  "default-src 'self'",
+  "script-src 'self'",       // no inline scripts, no unsafe-eval
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "connect-src 'self' https://your-ailita-backend.com",
+  "frame-ancestors 'none'",
+].join('; ')
+```
+
+Apply this in your Next.js headers configuration:
+
+```typescript
+// next.config.ts
+const nextConfig = {
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: csp,
+          },
+        ],
+      },
+    ]
+  },
+}
+export default nextConfig
+```
+
+<Warning>
+  `script-src 'self'` blocks inline scripts and eval. If your app currently uses inline `<script>` tags or `eval()` (common in some analytics and A/B testing tools), switching to a strict CSP will break those integrations. Audit your third-party scripts before enforcing a strict `script-src`. An incremental approach: start with `Content-Security-Policy-Report-Only` to observe violations before enforcing.
+</Warning>
+
+<Note>
+  Next.js generates runtime inline scripts for hydration. You will need to use nonces or hashes for those scripts. See the [Next.js CSP documentation](https://nextjs.org/docs/app/building-your-application/configuring/content-security-policy) for the nonce-based approach with Middleware.
+</Note>
+
+## Library limitations
+
+ailita-library is a client-side React library. It cannot enforce the following properties — and does not claim to.
+
+| Protection | Why ailita-library cannot provide it |
+|------------|--------------------------------------|
+| Prevent phishing of the host app | The library runs inside your app; if the user navigates to a phishing domain, the library is not loaded — the attacker's page is |
+| Prevent credential interception by malicious browser extensions | Extensions run with elevated privileges and can read page content regardless of CSP |
+| Enforce HTTPS | SSL/TLS is a network layer concern — your web server or CDN must enforce HTTPS |
+| Verify domain authenticity (DNSSEC, HSTS) | Infrastructure concern — configure HSTS headers and DNSSEC at the DNS/CDN layer |
+| Prevent server-side credential stuffing | The library submits credentials to your backend; rate limiting and account lockout are backend concerns |
+
+<Note>
+  The most important protection against phishing is user education (recognizing the correct domain) combined with TOTP/hardware key 2FA. Even with a perfect client-side implementation, a user who types credentials into a phishing page has bypassed all library-level protections. The library provides correct integration patterns — not a substitute for 2FA.
+</Note>
+
+## Next steps
+
+<Card title="Token Security Model" href="/ailita/token-security">
+  How accessToken and ailita_rt are stored, the 401 refresh queue, and the security boundary table
+</Card>
+
+<Card title="Fingerprinting & Bot Detection" href="/ailita/fingerprinting">
+  BehaviorData signals, VPN/incognito detection, and GDPR privacy requirements
+</Card>
