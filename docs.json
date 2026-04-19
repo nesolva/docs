@@ -110,7 +110,8 @@
             "group": "Security",
             "pages": [
               "ailita/token-security",
-              "ailita/login-spoofing"
+              "ailita/login-spoofing",
+              "ailita/fingerprinting"
             ]
           }
         ]
