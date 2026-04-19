@@ -105,6 +105,12 @@
               "ailita/admin-module",
               "ailita/challenge-module"
             ]
+          },
+          {
+            "group": "Security",
+            "pages": [
+              "ailita/token-security"
+            ]
           }
         ]
       }

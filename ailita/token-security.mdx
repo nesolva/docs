@@ -1,0 +1,229 @@
+---
+title: "Token Security Model"
+description: "How ailita-library stores access and refresh tokens, the 401 refresh queue, and the explicit security boundary between the library and your backend"
+---
+
+ailita-library manages two tokens: a short-lived `accessToken` held in memory, and a `refreshToken` stored in the `ailita_rt` browser cookie. Understanding where each token lives — and the deliberate limitations of JS-set cookies — is essential for a correct threat model when integrating this library into a production application.
+
+This page covers:
+
+- Why `accessToken` lives only in JavaScript memory and never in `localStorage`
+- The `ailita_rt` cookie: what attributes it has, and the explicit disclosure that it is NOT httpOnly
+- The 401 refresh queue: how concurrent requests are parked and replayed after a single refresh attempt
+- The security boundary table: what the library handles and what your backend or infrastructure must own
+
+## Access token — in-memory only
+
+The `accessToken` is stored in a module-level variable (`_accessToken`) inside `src/api/client.ts`. It is never written to `localStorage`, `sessionStorage`, or any other persistent browser storage. The variable is scoped to the module closure and is not exposed on `window`.
+
+```typescript
+// From src/api/client.ts
+// accessToken lives only in memory — never persisted
+let _accessToken: string | null = null
+
+function getAccessToken(): string | null {
+  return _accessToken
+}
+
+function setAccessToken(token: string | null): void {
+  _accessToken = token
+}
+```
+
+The token is set via `setTokens()` after a successful login or token refresh, and cleared via `clearTokens()` on logout or refresh failure. No browser storage API is involved.
+
+<Note>
+  Because the access token is in memory, it is lost on page refresh. This is intentional — the library silently re-acquires a new access token from the refresh token cookie on every `AuthProvider` mount (via `POST /auth/refresh`). The trade-off is a single network round-trip on every page load versus the XSS exposure of persisting the token in browser storage.
+</Note>
+
+### Why not localStorage?
+
+An access token in `localStorage` is readable by any JavaScript executing in the same origin — including third-party scripts, injected ads, and XSS payloads. An in-memory token cannot be extracted by XSS code that does not have direct access to the module closure. ailita-library uses the in-memory pattern to limit the blast radius of a script injection attack to the current page session only.
+
+Consider the comparison:
+
+| Storage location | Survives page refresh | XSS-readable | Recommended |
+|------------------|-----------------------|--------------|-------------|
+| `localStorage` | Yes | Yes — any script | No |
+| `sessionStorage` | No | Yes — any script | No |
+| In-memory (closure) | No | No — only module code | Yes |
+| httpOnly cookie | Via browser | No (JS-inaccessible) | Yes (if server-set) |
+
+<Warning>
+  The in-memory pattern does not protect against a persistent XSS attack that intercepts the token in-flight (e.g., by monkey-patching `fetch` or Axios before the library initializes). It only prevents token exfiltration from persistent storage after the fact. Defense-in-depth requires Content Security Policy headers — see [Login Spoofing Prevention](/ailita/login-spoofing) for CSP guidance.
+</Warning>
+
+## Refresh token — ailita_rt cookie
+
+<Warning>
+  **`ailita_rt` is set via `document.cookie` from client-side JavaScript. It is NOT an httpOnly cookie.** The cookie is therefore readable by any JavaScript executing on the page — including XSS payloads — which makes it a higher-value attack target than the in-memory access token. Understand this before deploying to production.
+</Warning>
+
+The `httpOnly` attribute can only be set by the server in a `Set-Cookie` response header. The ailita-library client sets `ailita_rt` from JavaScript after a successful login response — this is a deliberate architectural choice that allows the library to work without requiring the backend to return a `Set-Cookie` header. The exact cookie string written is:
+
+```
+ailita_rt=<encoded-token>; expires=<7-days-from-now>; path=/; SameSite=Lax
+```
+
+The full implementation from `src/api/client.ts`:
+
+```typescript
+const REFRESH_TOKEN_COOKIE = 'ailita_rt'
+
+function setRefreshToken(token: string | null): void {
+  if (typeof document === 'undefined') return
+  if (token) {
+    // 7 days TTL, SameSite=Lax (httpOnly cannot be set from JS — set by server ideally)
+    const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString()
+    document.cookie = `${REFRESH_TOKEN_COOKIE}=${encodeURIComponent(token)}; expires=${expires}; path=/; SameSite=Lax`
+  } else {
+    document.cookie = `${REFRESH_TOKEN_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`
+  }
+}
+```
+
+The token value is URL-encoded before storage and decoded when read back via `decodeURIComponent`.
+
+### The httpOnly upgrade path
+
+<Note>
+  If your backend team can return `ailita_rt` as a `Set-Cookie: ailita_rt=...; HttpOnly; SameSite=Lax` response header, that upgrade eliminates the JS-readable cookie risk. The library reads `ailita_rt` from `document.cookie` on the client — switching to httpOnly requires verifying that `POST /auth/refresh` still works when the cookie is sent automatically by the browser rather than explicitly by the library. **Verify the upgrade path with your backend team before adopting it.** Do not treat this as a drop-in change.
+</Note>
+
+The reason the httpOnly upgrade is non-trivial: the library currently reads `ailita_rt` explicitly from `document.cookie` and passes it in the `POST /auth/refresh` request body:
+
+```typescript
+async function refreshTokens(): Promise<string> {
+  const refreshToken = getRefreshToken()    // reads document.cookie
+  if (!refreshToken) throw new Error('No refresh token')
+
+  const response = await axios.post<ApiResponse<LoginResponse>>(
+    `${_baseUrl}/auth/refresh`,
+    { refreshToken },                       // sends in body
+    { headers: { 'Content-Type': 'application/json' } }
+  )
+  // ...
+}
+```
+
+If the backend switches to httpOnly, it must accept the cookie sent automatically via the request's `Cookie` header rather than a body field. This is a backend contract change that requires coordinated testing before production rollout.
+
+### Cookie attributes
+
+| Attribute | Value | Effect |
+|-----------|-------|--------|
+| `expires` | 7 days from login | Cookie is persistent — survives page close and browser restart |
+| `path` | `/` | Cookie is sent on all routes in the origin |
+| `SameSite` | `Lax` | Cookie is NOT sent on cross-origin requests initiated from third-party sites (CSRF mitigation for top-level navigations) |
+| `httpOnly` | NOT SET | Cookie is readable by JavaScript — see Warning above |
+| `Secure` | NOT SET | Cookie is sent over HTTP as well as HTTPS — ensure you serve the app over HTTPS in production |
+
+## 401 refresh queue
+
+When a request returns a 401, the Axios response interceptor in `client.ts` attempts a silent token refresh. The queue mechanism ensures that if multiple requests fire concurrently and all receive a 401, only one refresh attempt is made — not one per failing request.
+
+The two key state variables that drive the queue are:
+
+```typescript
+// From src/api/client.ts
+let _isRefreshing = false
+let _refreshQueue: Array<{ resolve: (token: string) => void; reject: (err: unknown) => void }> = []
+```
+
+### Step-by-step queue behavior
+
+**Step 1 — First 401 arrives:** `_isRefreshing` is `false`. The interceptor sets `_isRefreshing = true`, marks the original request with `_retry = true`, and calls `POST /auth/refresh` with the current `ailita_rt` cookie value.
+
+**Step 2 — Concurrent 401s (while refresh is in-flight):** Each additional request that returns 401 sees `_isRefreshing = true` and pushes a `{ resolve, reject }` pair onto `_refreshQueue` — effectively parking those requests. They are converted into pending Promises that will settle only when the refresh completes.
+
+**Step 3 — Refresh succeeds:** The new `accessToken` is written to memory via `setTokens()` and `ailita_rt` is updated in the cookie. All queued `resolve` callbacks fire with the new token. Each parked request injects the updated `Authorization: Bearer <newToken>` header and retries via `apiClient(originalRequest)`. `_isRefreshing` resets to `false` in the `finally` block.
+
+**Step 4 — Refresh fails** (no valid refresh token, server error, or token expired): All queued `reject` callbacks fire, causing each parked request to reject with the refresh error. `clearTokens()` wipes the in-memory access token and removes the `ailita_rt` cookie. `_onSessionExpired?.()` is called — this is your signal to redirect the user to the login page. `_isRefreshing` resets to `false` in the `finally` block.
+
+### The hadAuthHeader guard
+
+<Note>
+  Only requests that were sent with an `Authorization: Bearer` header are eligible for the refresh queue. Public endpoints (login, signup, forgot-password) do NOT trigger a refresh attempt even if they return 401 — this prevents an infinite loop where a failed login attempt incorrectly fires `onSessionExpired`.
+
+  The guard in `client.ts` checks:
+  ```typescript
+  const hadAuthHeader = !!(error.config?.headers?.['Authorization'])
+  ```
+
+  If `hadAuthHeader` is `false`, the interceptor passes the 401 error through to the caller without attempting any refresh. This means a bad password on the login form returns 401 cleanly to `LoginForm`'s error handler rather than triggering `onSessionExpired`.
+</Note>
+
+<Warning>
+  `onSessionExpired` is called once per refresh failure — not once per queued request. If 5 requests were queued and the refresh fails, all 5 reject immediately but `onSessionExpired` fires exactly once. Your handler must be idempotent (safe to call multiple times if it fires during a race in your app's routing layer). See [Session Management](/ailita/session-management) for the full `onSessionExpired` contract, including what state has already been cleared when your callback runs.
+</Warning>
+
+### Full interceptor flow diagram
+
+```
+Request fires ──► 401 response?
+                      │
+            ┌── No ──► Pass through
+            │
+           Yes
+            │
+     hadAuthHeader?
+            │
+        ┌── No ──► Pass through (public endpoint)
+        │
+       Yes
+        │
+   _isRefreshing?
+        │
+    ┌── Yes ──► Push {resolve, reject} onto _refreshQueue → park
+    │                                                          │
+   No                                             Refresh succeeds ──► resolve(newToken) → retry
+    │                                                          │
+   Set _isRefreshing=true                        Refresh fails  ──► reject(err)
+   Call POST /auth/refresh
+        │
+   Refresh succeeds ──► setTokens(), drain queue resolves, retry original
+        │
+   Refresh fails   ──► drain queue rejects, clearTokens(), onSessionExpired?.()
+        │
+   finally: _isRefreshing = false
+```
+
+## Security boundary
+
+ailita-library is a client-side library. The following table is an explicit contract of what it handles and what it does not. Use this as a checklist when reviewing your production security posture — every "No" row is a gap your backend or infrastructure must fill independently.
+
+| Concern | Library handles? | Who owns it |
+|---------|------------------|-------------|
+| Access token in-memory (no localStorage) | Yes | ailita-library |
+| Automatic token refresh on 401 | Yes | ailita-library |
+| Single refresh attempt with queue drain | Yes | ailita-library |
+| `onSessionExpired` callback on refresh failure | Yes | ailita-library |
+| `X-App-ID` / `X-Mid-Key` tenant headers on every request | Yes | ailita-library |
+| `ailita_rt` httpOnly enforcement | **No** | Backend (`Set-Cookie: HttpOnly`) |
+| CSRF token generation and validation | **No** | Backend |
+| Login rate limiting / account lockout | **No** | Backend |
+| Token revocation on logout (server-side) | **No** | Backend (`DELETE /auth/logout`) |
+| Content Security Policy headers | **No** | Your web server / CDN |
+| HTTPS enforcement | **No** | Your web server / CDN |
+
+<Note>
+  The `Secure` cookie attribute is also not set by the library — cookies without `Secure` are transmitted over plain HTTP. This is safe only if you enforce HTTPS at the infrastructure layer. In development over `http://localhost`, omitting `Secure` is standard behavior and expected by browsers.
+</Note>
+
+### What this means in practice
+
+**CSRF protection:** The `SameSite=Lax` cookie attribute provides partial CSRF protection — it prevents the cookie from being sent on cross-origin sub-resource requests (images, iframes, XHR/fetch initiated by third-party pages). It does NOT prevent CSRF on same-site requests or when users navigate directly to URLs. Full CSRF protection requires a server-side token that the backend validates on state-changing requests.
+
+**Rate limiting:** ailita-library makes no attempt to throttle login attempts. If you allow unrestricted `POST /auth/login` calls, automated credential-stuffing attacks will reach your backend unimpeded. Backend-side rate limiting (e.g., per IP, per email, with progressive backoff) is required independently.
+
+**Token revocation:** When a user calls `logout()`, the library clears local tokens but only fires the request to `DELETE /auth/logout` to invalidate the server-side session. If that request fails (network error, server down), the local state is cleared but the server-side refresh token may remain valid until it expires naturally. A robust logout implementation should handle this edge case on the server side.
+
+## Next steps
+
+<Card title="Login Spoofing Prevention" href="/ailita/login-spoofing">
+  iframe embedding, phishing domain protection, CSP headers, and slug/appId attack vectors
+</Card>
+
+<Card title="Session Management" href="/ailita/session-management">
+  onSessionExpired contract, useSessions, and session revocation
+</Card>
