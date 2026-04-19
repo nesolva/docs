@@ -1,0 +1,255 @@
+---
+title: "Fingerprinting & Bot Detection"
+description: "What signals ailita-library collects at login, how VPN and incognito detection work, behavioral biometrics captured via BehaviorData, and GDPR/CCPA privacy obligations"
+---
+
+`LoginForm` collects two categories of data before a login request is submitted: a device fingerprint (`FingerprintData`) assembled from hardware and browser signals, and behavioral biometrics (`BehaviorData`) assembled from keystroke timing, mouse movement, and scroll patterns during the time the user spends on the form. Both are sent alongside credentials on `POST /auth/login` to help the backend identify automated login attempts and flag anomalous behavior.
+
+The goal is not to block users — fingerprinting and behavioral biometrics are signals. The backend decides what to do with them: challenge a suspicious session, raise the risk score, require additional verification, or log the event for review. The library's responsibility is to collect these signals faithfully and transmit them with the login request.
+
+<Note>
+Fingerprinting is non-blocking. The `getFingerprint()` call starts in the background when `LoginForm` mounts — it does not delay the form render or the submit button. If fingerprinting has not completed by the time the user clicks submit, the login proceeds with whatever signals are available.
+</Note>
+
+## FingerprintData — device signals
+
+`FingerprintData` is populated by `getFingerprint()` in `src/utils/fingerprint.ts`. The result is cached in a module-level variable after the first call and reused for the session lifetime. Call `resetFingerprintCache()` to clear it between sessions.
+
+The device fingerprint is assembled from three layers of signals: basic browser/OS identity parsed from the user agent string, hardware characteristics gathered via WebGL and AudioContext APIs, and privacy-mode indicators detected via storage quota and IndexedDB probes.
+
+### Signal inventory
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `deviceFingerprint` | `string` | 32-bit hash (base-36) of userAgent, language, screen dimensions+colorDepth, devicePixelRatio, timezone, hardwareConcurrency, platform |
+| `deviceBrowser` | `string` | Browser name + major version (e.g., "Chrome 120") — parsed from userAgent |
+| `deviceOs` | `string` | OS name + version (e.g., "macOS 14.2", "Android 13") — parsed from userAgent |
+| `deviceModel` | `string` | Device model (e.g., "iPhone", "Mac", "PC") — parsed from userAgent |
+| `deviceName` | `string` | Combined OS + browser string (e.g., "macOS 14.2 — Chrome 120") — used as human-readable device name |
+| `isVpn` | `boolean` | VPN detection via WebRTC ICE candidate IP analysis (see VPN detection section) |
+| `isIncognito` | `boolean` | Incognito/private browsing detection via storage quota probe (see incognito detection section) |
+| `gpuRenderer` | `string \| undefined` | GPU renderer string from `WEBGL_debug_renderer_info` extension (e.g., "ANGLE (Apple M2)") |
+| `gpuVendor` | `string \| undefined` | GPU vendor string from `WEBGL_debug_renderer_info` (e.g., "Google Inc.") |
+| `canvasHash` | `string \| undefined` | Hash of a 2D canvas rendering of a deterministic scene — varies across GPU pipelines and font renderers |
+| `audioHash` | `string \| undefined` | Sum of first 32 frequency bins from a silent AudioContext oscillator — varies across CPU/OS audio stacks |
+
+<Note>
+Fields marked `| undefined` are omitted if the underlying browser API is unavailable (no WebGL, AudioContext blocked, etc.). The backend must treat these as optional signals — their absence does not indicate fraud. Browser extensions like Canvas Blocker can spoof or suppress these values intentionally; the backend should not hard-block on the absence of GPU or canvas signals.
+</Note>
+
+### How the core fingerprint hash is built
+
+The `deviceFingerprint` field is a 32-bit integer (formatted as a base-36 string) computed from a `|`-delimited concatenation of: `navigator.userAgent`, `navigator.language`, screen dimensions with color depth (`WxHxD`), `window.devicePixelRatio`, the IANA timezone from `Intl.DateTimeFormat().resolvedOptions().timeZone`, `navigator.hardwareConcurrency`, and `navigator.platform`. The hash algorithm is a simple djb2-style accumulator — it is fast and deterministic but not cryptographically strong. It is a stable device identifier across page reloads for the same browser profile, not a collision-resistant token.
+
+### GPU fingerprinting
+
+`gpuRenderer` and `gpuVendor` are extracted via the `WEBGL_debug_renderer_info` WebGL extension. When the extension is available, the full unmasked GPU string is captured (e.g., "ANGLE (Apple M2, APPLE M2, OpenGL 4.1)"). When unavailable, the masked values from `gl.RENDERER` and `gl.VENDOR` are used as fallbacks.
+
+`canvasHash` is derived from a 240×60 canvas rendering of a deterministic scene that uses two fonts (Arial and Times New Roman), two fill colors with alpha, and Unicode characters. Different GPU pipelines and font rendering engines produce subtly different pixel outputs, which produces a different hash. The hash is computed with the same djb2-style accumulator applied to the canvas's `toDataURL()` output.
+
+### Audio fingerprinting
+
+`audioHash` is computed by running a silent triangle-wave oscillator through an `AnalyserNode` for 100ms. The first 32 frequency bins from `getFloatFrequencyData()` are summed and formatted to 6 decimal places. The processing result varies across CPU architectures and OS audio stacks due to floating-point accumulation differences. The oscillator runs at gain=0 — no audible sound is produced.
+
+## VPN detection
+
+VPN detection uses the WebRTC API to enumerate ICE candidates and extract IP addresses exposed by the browser's network stack. Even when a VPN is active, WebRTC may reveal the local network IP via the ICE negotiation process because the browser's ICE gathering happens at the operating system level, below the VPN tunnel in some configurations.
+
+### Mechanics
+
+1. A new `RTCPeerConnection` is created with Google's STUN server (`stun:stun.l.google.com:19302`).
+2. An empty data channel is created to trigger ICE candidate generation.
+3. `createOffer()` is called and the SDP is set as the local description — this triggers ICE candidate gathering.
+4. Each ICE candidate's `candidate` string is parsed with a regex to extract IPv4 and IPv6 addresses.
+5. After 2 seconds (or when ICE gathering completes), the collected IP addresses are inspected.
+6. Addresses are categorized as private (`10.x`, `192.168.x`, `172.x`, `127.0.0.1`, `::`) or public.
+7. **Heuristic:** If more than 1 public IP address is detected, `isVpn` is set to `true`. Multiple public IPs suggest split-tunneling, where the VPN routes some traffic through a separate public IP while other traffic exits the VPN's endpoint.
+
+The 2-second timeout is intentional. ICE gathering may take longer on slow or constrained networks, but waiting indefinitely would hold the fingerprinting result and delay the login request on form submission. The timeout resolves with whatever IPs have been gathered within that window.
+
+<Warning>
+This is a heuristic, not a definitive VPN detector. It generates false positives for users on networks with multiple legitimate public IPs (e.g., enterprise dual-homed networks, certain IPv6 configurations). It also generates false negatives for VPNs that fully block WebRTC or that don't use split tunneling. The backend should treat `isVpn: true` as a risk signal, not a hard block.
+</Warning>
+
+### GDPR / privacy implications
+
+<Warning>
+**WebRTC IP probing may expose a user's private (local network) IP address without explicit consent.** Under GDPR Article 5(1)(a), processing personal data requires a lawful basis. An IP address — even a private LAN IP — may qualify as personal data in some jurisdictions. Before enabling fingerprinting in production, review whether your privacy policy discloses this collection and whether consent is required in your target jurisdictions. **This area is jurisdiction-dependent — flag for legal review before publishing.** (This warning reflects a known open item in the project.)
+</Warning>
+
+## Incognito / private browsing detection
+
+`detectIncognito()` uses three browser-specific heuristics to detect private browsing mode. None are 100% reliable — browser vendors actively work to reduce fingerprinting surface, and detection techniques that work today may stop working in future browser versions.
+
+The three methods run in parallel via `Promise.all()`. If any method returns `true`, the overall result is `true`. The result is cached alongside `FingerprintData`.
+
+| Method | Browsers | How it works |
+|--------|----------|--------------|
+| Storage quota probe | Chrome, Edge, Firefox | `navigator.storage.estimate()` — incognito mode caps the storage quota to ~120MB vs the multi-GB quota in normal mode. If `quota < 200MB`, incognito is inferred. |
+| `openDatabase` throw | Safari | Calling `window.openDatabase()` throws in Safari's private mode. |
+| `indexedDB.open()` rejection | Firefox | Firefox disables IndexedDB in private mode. Opening a database rejects immediately. |
+
+<Note>
+All three methods are async and run in parallel via `Promise.all()`. The result is cached alongside `FingerprintData` — `detectIncognito()` is not called on every login attempt, only on the first fingerprint collection per module lifecycle. The storage quota method is most reliable across browsers; the Safari and Firefox methods exist as complementary signals for browsers where quota-based detection is less accurate.
+</Note>
+
+## Invocation lifecycle
+
+Understanding when fingerprinting runs helps diagnose timing issues in integration and testing.
+
+### In LoginForm
+
+```
+LoginForm mounts
+  └─ useEffect fires (once, on mount)
+       └─ fingerprintRef.current = getFingerprint()  ← Promise stored, not awaited
+            └─ runs in background:
+                 ├─ buildFingerprint()          ← synchronous, completes immediately
+                 ├─ getGpuInfo()                ← synchronous, completes immediately
+                 ├─ detectIncognito()           ← async, storage quota + indexedDB probe
+                 ├─ detectVpn()                 ← async, RTCPeerConnection + 2s timeout
+                 └─ getAudioHash()              ← async, oscillator + 100ms settle
+
+User clicks submit
+  └─ handlePasswordSubmit fires
+       └─ await Promise.all([
+              fingerprintRef.current ?? getFingerprint(),  ← resolves immediately if done
+              getBehaviorSnapshot()
+          ])
+       └─ login(email, password, { fingerprint: fp, behavior })
+```
+
+If the fingerprint Promise has already resolved before submit, the `await` returns instantly. If the VPN detection is still pending (common on slow networks), the login waits for it to resolve or timeout. The 2-second `detectVpn()` timeout is the worst-case latency introduced by fingerprinting on the submit path.
+
+### Module-level cache
+
+`getFingerprint()` stores its resolved value in a module-level `_cached` variable. Subsequent calls to `getFingerprint()` return the cached value synchronously (via the returned Promise resolving immediately). The cache persists for the lifetime of the JavaScript module — it survives page navigation within a SPA but resets on a full page reload.
+
+Call `resetFingerprintCache()` explicitly if you need to force a fresh fingerprint collection (e.g., after a user logs out and a new user logs in within the same SPA session).
+
+### Server-side rendering (SSR)
+
+All fingerprinting functions guard against SSR environments with `typeof navigator === 'undefined'` and `typeof window === 'undefined'` checks. On the server, `getFingerprint()` returns an object with `deviceFingerprint: 'ssr'` and all other fields set to empty strings or `false`. The backend must handle the `'ssr'` sentinel value as a missing signal, not a valid fingerprint.
+
+## Known limitations
+
+Fingerprinting and bot detection are probabilistic signals with known gaps. Integrators should understand these limitations before making authorization decisions based on them.
+
+| Limitation | Affected signals | Notes |
+|------------|-----------------|-------|
+| Browser autofill | All `KeystrokeDynamics`, all `BotSignals` | Autofill pastes credentials without keydown events. `keyCount=0`, all bot flags `false`. Not distinguishable from a clean manual entry in the signals alone. |
+| Canvas/audio spoofing | `canvasHash`, `audioHash`, `gpuRenderer` | Browser extensions (Canvas Blocker, JShelter) can randomize or suppress these values. Absence or randomized values should not be treated as fraud. |
+| VPN false positives | `isVpn` | Enterprise networks, dual-homed interfaces, certain IPv6 configurations can produce multiple public IPs without a VPN being active. |
+| Incognito evasion | `isIncognito` | Browser vendors regularly update storage APIs to reduce incognito detection accuracy. Detection rates vary by browser version. |
+| Touch devices | All `MouseDynamics` | Touch-only devices produce no `mousemove` events. `mouse` will be `null`. This is expected behavior, not a bot signal. |
+| Headless browser with mouse simulation | `MouseDynamics`, `BotSignals` | Sophisticated automation frameworks can generate realistic mouse movement events. `hasMouseEvents=true` does not guarantee a human is present. |
+
+<Note>
+None of these limitations are defects to be fixed — they are inherent to client-side signal collection. The correct mitigation is to use these signals as one layer in a multi-factor risk model on the backend, not as a standalone gate.
+</Note>
+
+## BehaviorData — behavioral biometrics
+
+`BehaviorData` captures user interaction patterns during the time between `LoginForm` mounting and the login request being submitted. These signals are used by the backend to distinguish human users from automated bots and credential stuffing tools.
+
+Unlike device fingerprinting, behavioral biometrics are session-specific — they measure *how* the user interacted with the login form, not *which device* they used. A credential stuffing bot that rotates device fingerprints will still exhibit automated keystroke and mouse patterns.
+
+### KeystrokeDynamics
+
+Keystroke dynamics measure the timing of individual key press and release events. The two primary measurements are dwell time (how long each key is held down) and flight time (the gap between releasing one key and pressing the next). Human typists exhibit natural variance in both dimensions; automated tools produce unnaturally consistent intervals.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `dwellMean` | `number` | Mean time a key is held down, in milliseconds |
+| `dwellStd` | `number` | Standard deviation of dwell time |
+| `flightMean` | `number` | Mean time between consecutive keydown events, in milliseconds |
+| `flightStd` | `number` | Standard deviation of flight time |
+| `wpm` | `number` | Estimated words per minute |
+| `keyCount` | `number` | Total keystrokes observed |
+| `errorRate` | `number` | Ratio of backspace events to total keystrokes |
+
+<Note>
+`keystroke` in `BehaviorData` is `null` if fewer than 3 keystrokes were captured — for example, if the user autofills credentials and submits immediately. The backend must handle `null` gracefully.
+</Note>
+
+### MouseDynamics
+
+Mouse dynamics capture movement patterns during the form session. Bot-operated sessions typically exhibit either no mouse movement at all or perfectly linear movements; human users exhibit curved, variable-speed paths with idle pauses and micro-corrections.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `speedMean` | `number` | Mean cursor speed in px/ms |
+| `speedStd` | `number` | Standard deviation of cursor speed |
+| `directionChanges` | `number` | Direction change rate 0–1 (low = straight-line / bot; high = human) |
+| `totalDistanceNorm` | `number` | Total cursor distance traveled divided by the screen diagonal |
+| `idleRatio` | `number` | Fraction of samples where the cursor was idle (not moving) |
+| `sampleCount` | `number` | Total movement samples captured |
+
+<Note>
+`mouse` in `BehaviorData` is `null` if fewer than 5 movement samples were captured — for example, on touch-only devices or if the user navigates entirely via keyboard.
+</Note>
+
+### ScrollDynamics
+
+Scroll events on the login form are relatively rare — the form is typically short enough to fit in the viewport without scrolling. When scroll events do occur, their velocity and direction patterns can distinguish human scrolling (variable speed, occasional direction reversals) from scripted scrolling (constant-rate, single-direction).
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `eventCount` | `number` | Total scroll events captured |
+| `totalDeltaNorm` | `number` | Total scroll distance divided by viewport height |
+| `velocityMean` | `number` | Mean scroll delta per event, in pixels |
+| `directionFlips` | `number` | Number of up→down or down→up direction changes |
+
+<Note>
+`scroll` is `null` if no scroll events occurred before submission. On short login forms that don't require scrolling, this is the expected state and should not be treated as a bot indicator.
+</Note>
+
+### InteractionTiming
+
+Interaction timing captures the macro-level temporal structure of the login session — how quickly the user started typing after the form appeared, how long they spent typing, and how many significant pauses occurred.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `timeToFirstKey` | `number` | Milliseconds from component mount to first keydown event |
+| `totalTypingDuration` | `number` | Milliseconds from first to last keydown before submit |
+| `pauseCount` | `number` | Count of typing gaps greater than 500ms (hesitation events) |
+| `sessionDuration` | `number` | Milliseconds from component mount to behavioral data snapshot |
+
+### BotSignals
+
+`BotSignals` provides pre-computed boolean flags derived from the raw behavioral data. These are designed to give the backend a fast path to high-confidence signals without requiring the backend to implement its own behavioral analysis.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `hasMouseEvents` | `boolean` | Any mouse movement was detected during the session |
+| `hasScrollEvents` | `boolean` | Any scroll events were detected during the session |
+| `anomalousTypingSpeed` | `boolean` | `true` if `wpm > 300` — physically impossible for humans; indicates automated input |
+| `uniformIntervals` | `boolean` | `true` if all flight intervals are within 5ms of each other — characteristic of synthetic keyboard input |
+
+<Warning>
+`anomalousTypingSpeed` and `uniformIntervals` are high-confidence bot indicators. If either is `true`, the backend should treat the login attempt as suspicious. However, they do not fire for autofill — browser autofill pastes credentials without generating keystroke events, so `keyCount` will be 0 and all bot signal fields will be `false`. Autofill is not detectable via keystroke dynamics. Do not treat `keyCount=0` combined with `anomalousTypingSpeed=false` as a clean signal — it may simply mean the user autofilled their credentials.
+</Warning>
+
+## Privacy obligations
+
+The fingerprinting and behavioral biometric collection described on this page may constitute personal data processing under GDPR (EU), CCPA (California), and similar frameworks in other jurisdictions. The following areas require review before deploying to production.
+
+| Data collected | Potential classification | Action required |
+|----------------|--------------------------|-----------------|
+| WebRTC IP addresses (local and public) | Personal data (IP address) in most jurisdictions | Disclose in privacy policy; assess consent requirement |
+| Canvas fingerprint | Unique device identifier in EU ePrivacy Directive scope | Disclose in privacy policy; may require consent under PECR (UK) |
+| Audio fingerprint | Unique device identifier | Disclose in privacy policy; assess consent requirement |
+| Keystroke timing dynamics | Biometric behavioral data (may qualify under GDPR Art. 9) | Flag for legal review — biometric data has heightened protection in GDPR |
+| Mouse/scroll dynamics | Behavioral data | Disclose in privacy policy |
+
+The keystroke timing row deserves particular attention. GDPR Article 9 defines biometric data used for unique identification as a special category requiring explicit consent or another heightened lawful basis. Whether keystroke dynamics qualify depends on how the backend uses the data and whether it is stored in a way that can uniquely re-identify individuals. This determination is jurisdiction-dependent.
+
+<Warning>
+**This page describes the technical implementation of data collection. It does not constitute legal advice. Whether and how you must disclose this collection, obtain consent, or implement data retention limits depends on your jurisdiction, your users' jurisdictions, and the nature of your app. Flag all items in the table above for legal review before publishing to production users.**
+</Warning>
+
+## Next steps
+
+<Card title="Token Security Model" href="/ailita/token-security" description="How access and refresh tokens are stored, the 401 refresh queue, and the security boundary" />
+
+<Card title="Login Spoofing Prevention" href="/ailita/login-spoofing" description="iframe embedding, phishing domain protection, and CSP header guidance" />
