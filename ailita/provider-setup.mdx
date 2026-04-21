@@ -32,8 +32,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <AilitaProvider
-      slug="your-tenant"
-      appId="your-app-id"
+      clientId="pk_live_your_client_id"
       baseUrl="https://api.yourdomain.com/api/v1"
       onSessionExpired={() => router.push('/login')}
       loadingFallback={<div>Loading...</div>}
@@ -56,8 +55,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <AilitaProvider
-      slug="your-tenant"
-      appId="your-app-id"
+      clientId="pk_live_your_client_id"
       baseUrl="https://api.yourdomain.com/api/v1"
       onSessionExpired={() => navigate('/login', { replace: true })}
       loadingFallback={<div>Loading...</div>}
@@ -73,14 +71,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
 ## Props
 
-<ParamField body="slug" type="string" required>
-  Merchant subdomain slug (e.g. `"sanfernando"`). Used in `GET /auth/discovery?slug=` on mount.
-  Changing this prop re-runs discovery.
+<ParamField body="clientId" type="string" required>
+  Public client key for this tenant (e.g. `"pk_live_abc123"`). Used as the primary lookup key
+  in `GET /auth/discovery?clientId=` on mount. The backend validates this against a registered
+  domain allowlist using the browser-supplied `Origin` header. Changing this prop re-runs discovery.
 </ParamField>
 
-<ParamField body="appId" type="string" required>
-  Application identifier (e.g. `"colegios"`). Passed as a `useEffect` dependency alongside
-  `slug` and `baseUrl` — changing any of these three re-runs discovery.
+<ParamField body="slug" type="string">
+  Merchant subdomain slug (e.g. `"sanfernando"`). Optional — sent alongside `clientId` for
+  audit logging on the backend. Not used as a security identifier.
 </ParamField>
 
 <ParamField body="baseUrl" type="string" required>
@@ -109,15 +108,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
 On mount, `AilitaProvider` runs the following sequence:
 
 1. Sets the Axios base URL to your `baseUrl` prop
-2. Calls `GET /auth/discovery?slug={slug}` to fetch tenant configuration
+2. Calls `GET /auth/discovery?clientId={clientId}` to fetch tenant configuration
 3. Receives tenant data: name, colors, `loginMode`, `signupMode`, `publicApiKey`
 4. Injects `X-App-ID` and `X-Mid-Key` headers into all subsequent API requests via an Axios interceptor
 
 <Note>
-The `appId` prop is used as a `useEffect` dependency to re-run discovery if it changes.
-The actual `X-App-ID` header value sent to the backend comes from `data.app` in the discovery
-response — not from the prop directly. If your `slug` is correct, this is transparent.
-It only matters if you inspect network traffic and see a different value than your prop.
+The backend uses `clientId` to look up the tenant and validates the request `Origin` header
+against that tenant's registered domain allowlist. Auth requests from unregistered domains
+are rejected with `403`. This is the primary defense against tenant impersonation.
 </Note>
 
 ## Internal composition

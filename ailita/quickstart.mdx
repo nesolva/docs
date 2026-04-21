@@ -51,8 +51,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   return (
     <AilitaProvider
-      slug="your-merchant-slug"
-      appId="your-app-id"
+      clientId="pk_live_your_client_id"
       baseUrl="https://api.yourdomain.com/api/v1"
       onSessionExpired={() => router.push('/login')}
       loadingFallback={<div>Loading...</div>}
@@ -73,8 +72,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
   return (
     <AilitaProvider
-      slug="your-merchant-slug"
-      appId="your-app-id"
+      clientId="pk_live_your_client_id"
       baseUrl="https://api.yourdomain.com/api/v1"
       onSessionExpired={() => navigate('/login')}
       loadingFallback={<div>Loading...</div>}
@@ -242,7 +240,7 @@ export default function DashboardPage() {
 
 <Columns cols={2}>
   <Card title="AilitaProvider props" icon="plug" href="/ailita/provider-setup">
-    Full prop reference for slug, appId, baseUrl, onSessionExpired, and more.
+    Full prop reference for clientId, baseUrl, onSessionExpired, and more.
   </Card>
   <Card title="AuthGuard patterns" icon="shield" href="/ailita/auth-guard">
     Role-based access, loadingFallback, and the UX-gate security model.

@@ -48,8 +48,7 @@ function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <AilitaProvider
-      slug="your-slug"
-      appId="your-app-id"
+      clientId="pk_live_your_client_id"
       baseUrl="https://api.example.com/api/v1"
       onSessionExpired={() => router.push('/login?reason=expired')}
     >
@@ -68,8 +67,7 @@ function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <AilitaProvider
-      slug="your-slug"
-      appId="your-app-id"
+      clientId="pk_live_your_client_id"
       baseUrl="https://api.example.com/api/v1"
       onSessionExpired={() => navigate('/login', { state: { reason: 'expired' } })}
     >

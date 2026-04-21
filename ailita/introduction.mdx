@@ -38,10 +38,10 @@ Drop it into your app once. Each tenant (merchant) configures its own login mode
 
 ## How it works
 
-On mount, `AilitaProvider` calls `GET /auth/discovery?slug=` to fetch tenant configuration (branding colors, `loginMode`, `signupMode`, allowed features). The response is used to configure Axios headers and theme variables — your component tree renders only after this succeeds.
+On mount, `AilitaProvider` calls `GET /auth/discovery?clientId=` to fetch tenant configuration (branding colors, `loginMode`, `signupMode`, allowed features). The backend validates the request `Origin` header against the tenant's registered domain allowlist — auth requests from unregistered domains are rejected. The response is used to configure Axios headers and theme variables — your component tree renders only after this succeeds.
 
 ```
-AilitaProvider       -- calls GET /auth/discovery?slug=, injects X-App-ID + X-Mid-Key headers
+AilitaProvider       -- calls GET /auth/discovery?clientId=, injects X-App-ID + X-Mid-Key headers
   ThemeProvider      -- sets CSS variables (--color-primary, --color-secondary)
     AuthProvider     -- auth state + silent token refresh on mount
       {children}

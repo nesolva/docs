@@ -1,6 +1,6 @@
 ---
 title: "Login Spoofing Prevention"
-description: "Protecting your ailita-library integration from iframe embedding, phishing domains, slug/appId attacks, and XSS-based token interception"
+description: "Protecting your ailita-library integration from iframe embedding, phishing domains, tenant impersonation, and XSS-based token interception"
 ---
 
 Login spoofing attacks target the login page itself — either by embedding it in an attacker-controlled iframe, by impersonating the domain, or by injecting malicious scripts that intercept credentials or tokens before they are used. This page covers each attack vector and what you can do at the integration layer to reduce the risk.
@@ -8,8 +8,8 @@ Login spoofing attacks target the login page itself — either by embedding it i
 This page covers:
 
 - **Iframe embedding** — `X-Frame-Options` and CSP `frame-ancestors` to prevent clickjacking
-- **Phishing domain attacks** — how to lock your integration to the correct tenant slug and appId
-- **The slug/appId attack vector** — specific to multi-tenant platforms; how look-alike tenant registration can compromise your users
+- **Phishing domain attacks** — how to lock your integration to the correct tenant using `clientId`
+- **Tenant impersonation** — how `clientId` + backend `Origin` validation closes the multi-tenant attack surface
 - **CSP for in-memory token protection** — blocking the script-injection path that bypasses the in-memory storage defense
 - **Library limitations** — an honest disclosure of what ailita-library cannot prevent
 
@@ -69,25 +69,23 @@ export default nextConfig
 
 ## Phishing domain protection
 
-A phishing attack presents users with a look-alike domain (e.g., `app-mycompany.com` vs `app.mycompany.com`) that hosts a copy of your login page. At the ailita-library integration layer, the `slug` and `appId` props are the canonical identifiers that bind the login form to a specific tenant.
+A phishing attack presents users with a look-alike domain (e.g., `app-mycompany.com` vs `app.mycompany.com`) that hosts a copy of your login page. At the ailita-library integration layer, `clientId` is the canonical identifier that binds the login form to a specific tenant.
 
-### Validate slug and appId at startup
+### Hard-code clientId — never derive from the URL
 
-Hard-code your expected `slug` and `appId` as constants and assert them at app startup — never derive them dynamically from the URL, query parameters, or localStorage.
+Hard-code your `clientId` as a constant and pass it directly to `AilitaProvider` — never read it from the URL, query parameters, or localStorage.
 
 ```typescript
 // constants/ailita.ts
-export const AILITA_SLUG = 'your-tenant-slug'       // never from URL
-export const AILITA_APP_ID = 'your-tenant-app-id'   // never from URL
+export const AILITA_CLIENT_ID = 'pk_live_your_client_id'  // never from URL
 
 // app/providers.tsx
-import { AILITA_SLUG, AILITA_APP_ID } from '@/constants/ailita'
+import { AILITA_CLIENT_ID } from '@/constants/ailita'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <AilitaProvider
-      slug={AILITA_SLUG}
-      appId={AILITA_APP_ID}
+      clientId={AILITA_CLIENT_ID}
       baseUrl={process.env.NEXT_PUBLIC_AILITA_BASE_URL!}
       onSessionExpired={() => { /* redirect */ }}
     >
@@ -98,31 +96,33 @@ export function Providers({ children }: { children: React.ReactNode }) {
 ```
 
 <Warning>
-  Do NOT read `slug` or `appId` from `window.location`, query parameters, or `localStorage`. An attacker who can influence these values (via open redirect, XSS, or phishing URL manipulation) can redirect the discovery call to a tenant they control.
+  Do NOT read `clientId` from `window.location`, query parameters, or `localStorage`. An attacker who can influence this value can redirect the discovery call to a tenant they control.
 </Warning>
 
-### The slug/appId attack vector
+### Tenant impersonation and the clientId + Origin model
 
-ailita-library is a multi-tenant platform. Any party can register a tenant with an arbitrary slug. An attacker who knows your slug can register `your-tenant-slug-support` or `your-tenant-slug-help` on the same platform and obtain a legitimate `appId` for that look-alike tenant.
+ailita-library is a multi-tenant platform. The primary defense against tenant impersonation is the combination of an opaque `clientId` (not a human-readable slug) and backend `Origin` header validation.
 
-Here is how the attack unfolds: If your consumer app reads `slug` from the URL (e.g., `?tenant=your-tenant-slug`) and the attacker crafts a phishing URL pointing at their look-alike tenant, `AilitaProvider` will call `GET /auth/discovery?slug=your-tenant-slug-support`, receive a valid response from the attacker's tenant, and inject the attacker's `X-App-ID` and `X-Mid-Key` headers. Credentials submitted via `LoginForm` would then be sent to the attacker's backend.
+**How `clientId` + Origin validation works:**
+
+The library calls `GET /auth/discovery?clientId=pk_live_abc123`. The backend looks up the tenant by `clientId` and checks the request's HTTP `Origin` header against that tenant's registered domain allowlist (e.g., `["https://app.mycompany.com"]`). If the `Origin` is not in the allowlist, the backend responds with `403` — no tenant config is returned and no auth requests can proceed.
 
 The discovery call sequence in `AilitaProvider` is:
 
 ```typescript
 // From src/providers/AilitaProvider.tsx (simplified)
-apiDiscovery(slug)                          // GET /auth/discovery?slug=<slug>
+apiDiscovery(clientId, slug)                // GET /auth/discovery?clientId=<clientId>
   .then((data) => {
     setTenantConfig(data.app, data.publicApiKey)  // injects X-App-ID and X-Mid-Key
     setIsReady(true)
   })
 ```
 
-Notice that `setTenantConfig` uses `data.app` from the discovery response — the value the server returns for the given slug — not the consumer-provided `appId` prop. If the slug resolves to an attacker's tenant, the attacker controls `data.app` and `data.publicApiKey`. All subsequent requests carry the attacker's tenant headers.
+**Why this closes the attack surface:** The browser sets the `Origin` header automatically for cross-origin requests and JavaScript cannot override it. A script on `app-phishing.com` that hard-codes a valid `clientId` will still receive a `403` because `Origin: https://app-phishing.com` is not in your tenant's allowlist. Postman and curl can forge `Origin`, but Cloudflare bot protection and rate limiting handle that layer.
 
-<Warning>
-  The library has no mechanism to verify that the `slug` and `appId` passed to `AilitaProvider` correspond to YOUR tenant. That verification is your responsibility — hard-code the values as constants (shown above) and never derive them from user-controllable input.
-</Warning>
+<Note>
+  The library does not send `window.location.origin` in the request body — that would be spoofable by any script. The security guarantee comes from the HTTP `Origin` header, which browsers enforce at the network layer.
+</Note>
 
 ## CSP headers to protect the in-memory token
 
