@@ -5,3 +5,7 @@
 # Draft content
 drafts/
 *.draft.mdx
+
+# Internal planning and tooling (not site pages)
+docs/
+scripts/
