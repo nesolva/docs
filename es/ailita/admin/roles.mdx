@@ -1,13 +1,76 @@
 ---
-title: "Roles y permisos"
-description: "Qué puede hacer cada persona en tu organización."
+title: "Roles"
+description: "Qué es un rol y cómo crear los de tu organización."
 icon: "user-shield"
 ---
 
 import { NecesitasAyuda } from "/snippets/necesitas-ayuda.mdx";
 
-{/* stub */}
+Un rol agrupa permisos. En lugar de dar permisos uno por uno, le asignás un rol a cada persona.
 
-Esta página va a explicar: Qué roles existen y cómo crear roles propios para tu organización.
+## Tipos de rol
+
+En **Roles** los ves en tres grupos:
+
+| Grupo | Qué es |
+|---|---|
+| **Base** | Roles que vienen con Ailita. No se pueden modificar. |
+| **De producto** | Roles de cada producto contratado, como Alfred. No se pueden modificar. |
+| **De la organización** | Los que creás vos para tu organización. |
+
+Los roles base y de producto son de solo lectura. Los roles de tu organización los armás con los permisos que vos tenés.
+
+## Roles que conviene conocer
+
+### Administrador de la organización
+
+Permite administrar tu organización en el Backoffice:
+
+- usuarios, invitaciones, sesiones, dispositivos y actividad;
+- roles;
+- la organización: ajustes, reglas de sesión, dominios, ingreso corporativo y casilla de facturación;
+- aprobar o rechazar pedidos de recuperación de acceso;
+- ver las integraciones y regenerar sus credenciales.
+
+### Operador de Alfred
+
+El rol **Operador** es el que necesitan las personas que trabajan con facturas en Alfred. Permite:
+
+- **Procesar documentos**
+- **Descargar PDF y archivos de documentos**
+- **Ver facturas**
+- **Descargar el PDF de las facturas**
+
+Si alguien ve el mensaje "No tenés permiso para tomar tareas" en Alfred, le falta este rol. Asignáselo desde su ficha en [Usuarios](/es/ailita/admin/usuarios-e-invitaciones).
+
+## Crear un rol
+
+<Steps>
+  <Step title="Abrí el formulario">
+    En **Roles**, tocá **Nuevo rol**.
+  </Step>
+  <Step title="Poné nombre y descripción">
+    Elegí un nombre que no esté en uso. Si ya existe uno igual, el Backoffice responde "Ya existe un rol con ese nombre."
+  </Step>
+  <Step title="Elegí los permisos">
+    Marcá los permisos que querés incluir.
+  </Step>
+  <Step title="Guardá">
+    Guardá el rol. Ya podés asignarlo a las personas de tu organización.
+  </Step>
+</Steps>
+
+## Reglas para dar permisos
+
+- **Solo podés dar permisos que vos tenés.** Si intentás dar uno que no tenés, el Backoffice responde "Solo podés dar permisos que vos mismo tenés…".
+- **Tiene que quedar alguien que administre los roles.** La organización necesita al menos una persona activa con permiso para administrar roles. Si un cambio la dejaría sin nadie, el Backoffice no lo permite.
+
+## Asignar roles a una persona
+
+Al [invitar a una persona](/es/ailita/admin/usuarios-e-invitaciones) elegís su rol. Más tarde, podés cambiar los roles desde su ficha en **Usuarios**.
+
+## Si algo falla
+
+Mirá [Solución de problemas](/es/ailita/admin/problemas).
 
 <NecesitasAyuda />

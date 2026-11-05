@@ -6,8 +6,94 @@ icon: "right-to-bracket"
 
 import { NecesitasAyuda } from "/snippets/necesitas-ayuda.mdx";
 
-{/* stub */}
+Cuando abrís una aplicación de tu organización, como Alfred, llegás a la pantalla de ingreso de Ailita. Arriba ves el logo, el nombre y el color de tu organización, y el aviso **Continuás a** seguido del nombre de la aplicación.
 
-Esta página va a explicar: Cómo ingresar con contraseña, código por email, passkey o el proveedor de tu organización.
+<Note>
+Los pasos que ves dependen de tu organización: contraseña, código por email, passkey, Google o Microsoft, y si te exigen un segundo factor. Si un paso de esta página no aparece, tu organización no lo usa.
+</Note>
+
+## Ingresar paso a paso
+
+<Steps>
+  <Step title="Escribí tu email">
+    En **Qué bueno verte.**, escribí tu **Correo electrónico** y tocá **Continuar**.
+
+    - Si preferís una passkey, tocá **Ingresar con passkey** y usá la huella, la cara o el PIN de tu dispositivo.
+    - Si tu organización usa Google o Microsoft, tocá **Continuar con Google** o **Continuar con Microsoft**.
+    - Si tu organización permite registrarse, también ves ¿No tenés cuenta? con el enlace **Crear cuenta**. Mirá [Crear tu cuenta](/es/ailita/crear-cuenta).
+  </Step>
+  <Step title="Elegí tu organización (si te lo piden)">
+    Si tu email pertenece a varias organizaciones, aparece **Elegí tu organización**. Elegí a la que querés entrar.
+  </Step>
+  <Step title="Ingresá tu contraseña o usá otra opción">
+    En **Tu contraseña**, escribí tu contraseña. Desde esta pantalla también podés:
+
+    - tocar **¿Olvidaste tu contraseña?** para recuperarla. Mirá [Olvidé mi contraseña](/es/ailita/recuperar/contrasena);
+    - tocar **Enviarme un código por email**, si tu organización lo permite;
+    - tocar **Usar otro email** para volver al paso anterior.
+
+    Si tu organización usa SSO corporativo, en lugar de la contraseña ves la opción de tu proveedor. Si el SSO es la única forma de ingresar, vas directo al proveedor.
+  </Step>
+  <Step title="Ingresá el código que te enviamos por email (si te lo piden)">
+    Vas a ver una de dos pantallas:
+
+    - **Revisá tu email**: te enviamos un código.
+    - **Confirmá que sos vos**: te enviamos un código porque es la primera vez que ingresás desde este dispositivo.
+
+    Escribí el código completo y se envía solo. Si no te llegó, tocá **Reenviar código**. Vas a ver **Te enviamos un código nuevo.**
+  </Step>
+  <Step title="Ingresá tu segundo factor (si lo tenés)">
+    En **Verificación en dos pasos**, escribí el código de tu app de autenticación o uno de tus códigos de respaldo.
+
+    ¿Perdiste el teléfono y los códigos? Tocá **¿Perdiste tu teléfono y tus códigos?** y seguí [Perdí mi segundo factor](/es/ailita/recuperar/segundo-factor).
+  </Step>
+  <Step title="Protegé tu cuenta (si tu organización lo exige)">
+    Si tu organización exige un segundo factor y todavía no tenés uno, aparece **Protegé tu cuenta**.
+
+    1. Escaneá el código QR con Google Authenticator, 1Password, Authy o una app similar. Si no podés escanearlo, tocá **¿No podés escanear? Ingresá esta clave:** y escribí la clave en tu app.
+    2. Escribí el código que muestra la app.
+    3. En **Guardá tus códigos de respaldo**, tocá **Copiar** y guardalos en un lugar seguro. Cada código sirve una sola vez y solo los ves esta vez. Después tocá **Ya los guardé**.
+  </Step>
+  <Step title="Creá una passkey (opcional)">
+    En **Ingresá más rápido la próxima vez**, tocá **Crear passkey** para ingresar sin escribir tu contraseña. Si no querés, tocá **Ahora no**. Podés agregar una passkey más tarde desde [Seguridad](/es/ailita/cuenta/seguridad).
+  </Step>
+  <Step title="Decidí qué compartís con la aplicación (la primera vez)">
+    La primera vez que una aplicación pide tus datos, aparece **Vos decidís qué compartir.** con la lista de lo que la aplicación va a poder hacer:
+
+    - saber que sos vos cuando volvés;
+    - ver tu nombre y apellido;
+    - ver tu dirección de email;
+    - ver la organización a la que pertenecés;
+    - ver tus roles en la organización;
+    - mantener tu sesión abierta mientras la uses.
+
+    Tocá **Permitir** para continuar o **Cancelar** para no dar acceso. Podés quitar el acceso más tarde en [Aplicaciones conectadas](/es/ailita/cuenta/aplicaciones).
+  </Step>
+</Steps>
+
+Al terminar, Ailita te lleva de vuelta a la aplicación. Mientras tanto ves **Verificando tu sesión…** y un aviso de que te estamos llevando de vuelta a la aplicación.
+
+## Confirmá que sos vos
+
+Antes de un cambio sensible, una aplicación o tu propia cuenta pueden pedirte que lo confirmes. Aparece **Confirmá que sos vos** y podés confirmar con:
+
+- un código de tu app de autenticación;
+- un código que te enviamos por email;
+- **Confirmar con passkey**.
+
+Después de confirmar, volvés a la misma página y repetís el cambio. Si no tenés un segundo factor, ingresás de nuevo.
+
+## Cerrar sesión
+
+Para salir, elegí **Cerrar sesión** en **Mi cuenta**. Vas a ver **Cerraste sesión**. Para volver, tocá **Ingresar de nuevo**.
+
+## Si la aplicación no te deja continuar
+
+Cuando una aplicación te manda a ingresar y algo falla, aparece **No podemos continuar**. Volvé a la aplicación y empezá de nuevo. Si sigue pasando, escribí al soporte de esa aplicación.
+
+## Si no podés ingresar
+
+- Mirá [No puedo ingresar](/es/ailita/problemas/iniciar-sesion) para los mensajes de error.
+- Mirá [Códigos y segundo factor](/es/ailita/problemas/codigos-y-segundo-factor) si el código no llega o no funciona.
 
 <NecesitasAyuda />

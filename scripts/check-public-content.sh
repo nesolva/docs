@@ -15,18 +15,27 @@ for d in es en snippets; do [ -d "$d" ] && dirs+=("$d"); done
 
 forbidden=(
   'fingerprint' 'huella digital' 'vpn' 'inc[oó]gnito'
-  '\bbots?\b' 'heur[ií]stic' 'umbral' 'threshold' 'puntaje de riesgo' 'risk score'
+  '(^|[^a-záéíóúñü])bots?([^a-záéíóúñü]|$)' 'heur[ií]stic' 'umbral' 'threshold' 'puntaje de riesgo' 'risk score'
   'src/' '/api/' 'localStorage' 'sessionStorage' 'cookie' 'httponly' 'jwt'
   'access token' 'refresh token'
   '[0-9]+ *(intentos|attempts|minutos|minutes|horas|hours|d[ií]as|days|segundos|seconds)\b'
-  '\bTODO\b' '\bPENDIENTE\b'
 )
-$no_stubs && forbidden+=('\{/\* stub \*/\}')
+# Markers for unfinished text: matched case-sensitively, so "Pendiente" or "todo" in prose pass.
+markers=('(^|[^A-Z])TODO([^A-Z]|$)' '(^|[^A-Z])PENDIENTE([^A-Z]|$)')
+$no_stubs && markers+=('\{/\* stub \*/\}')
 
 status=0
 for pattern in "${forbidden[@]}"; do
   if matches=$(grep -rniE --include='*.mdx' --include='*.md' -e "$pattern" "${dirs[@]}"); then
     echo "Forbidden pattern /$pattern/:"
+    echo "$matches" | sed 's/^/  /'
+    status=1
+  fi
+done
+
+for pattern in "${markers[@]}"; do
+  if matches=$(grep -rnE --include='*.mdx' --include='*.md' -e "$pattern" "${dirs[@]}"); then
+    echo "Unfinished marker /$pattern/:"
     echo "$matches" | sed 's/^/  /'
     status=1
   fi

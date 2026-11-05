@@ -6,8 +6,50 @@ icon: "table-list"
 
 import { NecesitasAyuda } from "/snippets/necesitas-ayuda.mdx";
 
-{/* stub */}
+Cada factura que Alfred recibe genera una **tarea**. El panel te muestra todas las tareas y en qué estado está cada una.
 
-Esta página va a explicar: Qué muestra el panel y qué significa cada estado de una tarea.
+## Qué muestra el panel
+
+Al ingresar a Alfred, en **Procesamiento**, ves la lista **Tareas recientes**. Cada fila tiene:
+
+- la tarea,
+- el estado,
+- el documento,
+- cuándo se recibió.
+
+Para acotar la lista, usá los filtros de **estado**, **Desde** y **Hasta**.
+
+Para abrir una tarea, hacé clic en ella. Vas a ver **Tarea #** seguido del número de la tarea.
+
+## Qué significa cada estado
+
+| Estado | Qué significa | Qué hacés |
+|---|---|---|
+| **Pendiente** | Alfred recibió la factura y todavía no empezó a procesarla. | Nada. Esperá. |
+| **En proceso** | Alfred está leyendo y validando la factura. | Nada. Volvé a mirar en un rato. |
+| **Revisión manual** | Alfred necesita que una persona revise los datos. | Tomá la tarea, revisá los campos y finalizala. Mirá [Revisar una tarea](/es/alfred/revisar-tarea). |
+| **Finalizada** | Una persona revisó y cerró la tarea. | Nada, salvo que encuentres un error: podés tomarla de nuevo y corregirla. |
+| **Falló** | Alfred no pudo procesar la factura. | Subí la factura de nuevo desde [Subir una factura](/es/alfred/subir-factura). Si vuelve a fallar, [pedí ayuda](/es/ayuda/soporte). |
+
+<Note>
+  Si usás Alfred en inglés, los estados aparecen con su código en lugar del nombre: `PENDING` (Pendiente), `IN_PROGRESS` (En proceso), `MANUAL_REVIEW` (Revisión manual), `FINALIZED` (Finalizada) y `FAILED` (Falló).
+</Note>
+
+## Qué tareas te tocan
+
+Las tareas en **Revisión manual** son las que necesitan tu trabajo. Para tomar una, necesitás el rol **Operador**. Si no lo tenés, pedile a quien administra tu organización que te lo asigne.
+
+Si otra persona ya tomó la tarea, Alfred te avisa. Mirá los mensajes en [Solución de problemas](/es/alfred/problemas).
+
+## Próximos pasos
+
+<CardGroup cols={2}>
+  <Card title="Revisar una tarea" icon="pen-to-square" href="/es/alfred/revisar-tarea">
+    Tomá una tarea y corregí los datos.
+  </Card>
+  <Card title="Buscar facturas" icon="magnifying-glass" href="/es/alfred/facturas">
+    Encontrá una factura ya procesada.
+  </Card>
+</CardGroup>
 
 <NecesitasAyuda />

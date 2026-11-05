@@ -6,8 +6,37 @@ icon: "upload"
 
 import { NecesitasAyuda } from "/snippets/necesitas-ayuda.mdx";
 
-{/* stub */}
+Las facturas que llegan a la casilla de facturación se procesan solas. Si tenés una factura en PDF que no llegó por correo, podés subirla vos.
 
-Esta página va a explicar: Cómo subir una factura en PDF para que Alfred la procese.
+## Antes de empezar
+
+- Tenés que ingresar a Alfred con el rol **Operador**. Mirá [Ingresar a Alfred](/es/alfred/ingresar).
+- La factura tiene que ser un archivo **PDF**. Alfred no acepta otros formatos para facturas.
+
+## Subir una factura
+
+<Steps>
+  <Step title="Abrí el diálogo">
+    En el panel, hacé clic en **Nueva factura**. Se abre el diálogo **Procesar factura**.
+
+    También podés arrastrar el PDF y soltarlo sobre la página.
+  </Step>
+  <Step title="Elegí el archivo">
+    Seleccioná el PDF de tu computadora.
+  </Step>
+  <Step title="Procesalo">
+    Confirmá desde el diálogo **Procesar factura**. Alfred empieza a procesar la factura.
+  </Step>
+  <Step title="Seguí la tarea">
+    Volvé al panel y buscá la tarea en **Tareas recientes**. Mirá qué significa cada estado en [Panel y tareas](/es/alfred/panel-y-tareas).
+  </Step>
+</Steps>
+
+## Si algo sale mal
+
+- Si el archivo no es un PDF, Alfred muestra **Solo se aceptan archivos PDF**.
+- Si la subida falla, Alfred muestra **No se pudo subir el archivo**. Si el archivo es muy grande, dividilo o comprimilo y probá de nuevo.
+
+Mirá qué hacer con cada mensaje en [Solución de problemas](/es/alfred/problemas).
 
 <NecesitasAyuda />

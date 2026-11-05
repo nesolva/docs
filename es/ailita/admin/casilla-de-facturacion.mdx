@@ -6,8 +6,50 @@ icon: "inbox"
 
 import { NecesitasAyuda } from "/snippets/necesitas-ayuda.mdx";
 
-{/* stub */}
+La casilla de facturación es el buzón de email donde llegan las facturas de tu organización. [Alfred](/es/alfred/introduccion) lee esa casilla para capturar las facturas. Para conectarla, tu organización necesita un [dominio verificado](/es/ailita/admin/dominios-y-sso) y una casilla de Microsoft.
 
-Esta página va a explicar: Cómo conectar la casilla donde llegan las facturas que lee Alfred.
+## Conectar la casilla
+
+<Steps>
+  <Step title="Guardá la dirección">
+    En **Casilla de facturación**, escribí la dirección de la casilla y guardá.
+  </Step>
+  <Step title="Conectala con Microsoft">
+    Tocá **Conectar con Microsoft**.
+  </Step>
+  <Step title="Ingresá con la cuenta de la casilla">
+    Ingresá con la cuenta **de la casilla**, no con la tuya. Si ingresás con otra cuenta, el Backoffice responde "Iniciaste sesión con otra cuenta. Tenés que entrar con la cuenta de la casilla."
+  </Step>
+  <Step title="Aceptá todos los permisos">
+    Microsoft te muestra una lista de permisos. Aceptalos todos. Si no, el Backoffice responde "Microsoft no otorgó acceso permanente. Aceptá todos los permisos."
+  </Step>
+</Steps>
+
+Cuando termina, el Backoffice te avisa que la casilla quedó conectada y Alfred empieza a leer las facturas nuevas.
+
+## Estados de la casilla
+
+| Estado | Qué hacer |
+|---|---|
+| **Conectada** | Nada. Alfred está leyendo la casilla. |
+| **Falta conectar** | Seguí los pasos de arriba. |
+| **Desconectada** | Reconectá la casilla. |
+
+## Reconectar la casilla
+
+A veces Microsoft deja de aceptar el acceso, y la casilla pasa a **Desconectada**. Alfred no lee facturas nuevas hasta que la reconectes.
+
+<Steps>
+  <Step title="Reconectá">
+    En **Casilla de facturación**, tocá **Reconectar con Microsoft**.
+  </Step>
+  <Step title="Repetí el ingreso">
+    Ingresá con la cuenta de la casilla y aceptá todos los permisos, como al conectarla.
+  </Step>
+</Steps>
+
+## Si algo falla
+
+Mirá [Solución de problemas](/es/ailita/admin/problemas), donde están los mensajes de la conexión con Microsoft.
 
 <NecesitasAyuda />

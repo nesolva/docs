@@ -6,8 +6,63 @@ icon: "globe"
 
 import { NecesitasAyuda } from "/snippets/necesitas-ayuda.mdx";
 
-{/* stub */}
+Con el SSO corporativo, tu gente ingresa con su cuenta de trabajo de Microsoft 365 o Google Workspace. Para activarlo, primero verificás que el dominio de tu organización es tuyo. Un dominio verificado también habilita la [casilla de facturación](/es/ailita/admin/casilla-de-facturacion).
 
-Esta página va a explicar: Cómo verificar el dominio de tu organización y configurar el ingreso con Microsoft 365 o Google Workspace.
+## Verificar tu dominio
+
+Necesitás poder crear registros en el DNS de tu dominio, o pedirle a quien lo administre que lo haga.
+
+<Steps>
+  <Step title="Agregá el dominio">
+    En **Dominios**, agregá el dominio de tu organización, por ejemplo el que usan tus emails de trabajo.
+  </Step>
+  <Step title="Creá el registro TXT">
+    El Backoffice te muestra un registro TXT. Crealo en el DNS de tu dominio.
+  </Step>
+  <Step title="Verificalo">
+    Tocá **Verificar**. Si el DNS todavía no se actualizó, el Backoffice responde "Todavía no encontramos el registro TXT (el DNS puede tardar unos minutos)." Esperá un rato y volvé a tocar **Verificar**.
+  </Step>
+</Steps>
+
+Algunos dominios no se pueden agregar:
+
+- Los dominios de correo públicos, como gmail.com o outlook.com, no pueden pertenecer a una organización.
+- Un dominio que ya verificó otra organización no se puede verificar de nuevo.
+
+## Configurar el SSO corporativo
+
+En **SSO corporativo** elegís el proveedor: **Microsoft 365** o **Google Workspace**. Después elegís qué aplicación usar para el ingreso:
+
+- **App de Nesolva**: no tenés nada que configurar.
+- **App propia**: usás una aplicación registrada por tu organización en el proveedor. Cargás su ID de cliente y su secreto.
+
+<Steps>
+  <Step title="Verificá el dominio">
+    El dominio del email tiene que estar verificado. Si no lo está, el Backoffice responde "Primero verificá el dominio en Dominios."
+  </Step>
+  <Step title="Vinculá tu organización de Microsoft (solo Microsoft)">
+    Si usás Microsoft, tocá **Vincular organización de Microsoft**. Sin este paso, el Backoffice responde "Primero vinculá tu organización de Microsoft."
+  </Step>
+  <Step title="Completá la configuración">
+    Elegí el dominio de email. Decidí si querés crear usuarios automáticamente al ingresar con SSO: si no lo activás, las personas necesitan una invitación para entrar con SSO.
+  </Step>
+  <Step title="Activalo">
+    Habilitá el SSO y guardá.
+  </Step>
+</Steps>
+
+## Qué ve tu gente
+
+Cuando activás el SSO, la pantalla de ingreso muestra **Continuar con Google** o **Continuar con Microsoft**. Si en [Acceso y seguridad](/es/ailita/admin/acceso-y-seguridad) elegiste **Solo SSO corporativo**, las personas van directo al proveedor, sin pasar por la contraseña.
+
+<Tip>
+  Antes de pasar a solo SSO, probá que podés ingresar con SSO con una cuenta de prueba, para no dejar a tu gente sin acceso.
+</Tip>
+
+Si alguien tiene problemas para ingresar con SSO, mirá [No puedo ingresar](/es/ailita/problemas/iniciar-sesion).
+
+## Si algo falla
+
+Mirá [Solución de problemas](/es/ailita/admin/problemas).
 
 <NecesitasAyuda />
