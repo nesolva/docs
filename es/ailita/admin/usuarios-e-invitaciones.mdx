@@ -6,8 +6,67 @@ icon: "users"
 
 import { NecesitasAyuda } from "/snippets/necesitas-ayuda.mdx";
 
-{/* stub */}
+En **Usuarios** ves a las personas de tu organización. Podés buscarlas, invitar a otras y administrar cada cuenta.
 
-Esta página va a explicar: Cómo invitar personas, desactivarlas, cerrar sus sesiones o reiniciar su segundo factor.
+## Buscar personas
+
+Buscá por email completo. La lista muestra la persona, su estado, sus roles, si tiene segundo factor y su último ingreso.
+
+| Estado | Qué significa |
+|---|---|
+| **Activo** | La cuenta funciona con normalidad. |
+| **Sin verificar** | La persona todavía no confirmó su email. |
+| **Desactivado** | Alguien de tu organización desactivó la cuenta. |
+| **Bloqueado** | El ingreso de la persona está bloqueado. Si necesitás ayuda con una cuenta bloqueada, escribinos. |
+
+## Invitar a una persona
+
+<Steps>
+  <Step title="Abrí el formulario">
+    En **Usuarios**, tocá **Invitar usuario**.
+  </Step>
+  <Step title="Completá los datos">
+    Escribí el **Email** de la persona y elegí su **Rol**. El rol viene preseleccionado como USER, y podés cambiarlo. Para saber qué permite cada rol, mirá [Roles](/es/ailita/admin/roles).
+  </Step>
+  <Step title="Enviá la invitación">
+    Tocá **Enviar invitación**. La persona recibe un email con un enlace para crear su cuenta. El enlace vence a los pocos días.
+  </Step>
+</Steps>
+
+En **Invitaciones** ves las invitaciones pendientes, con el email, cuándo se envió y cuándo vence. Desde esa lista podés cancelar una invitación.
+
+Si la persona ya tiene cuenta, el Backoffice responde "Esa persona ya tiene cuenta." En ese caso no hace falta invitarla: buscala en la lista y revisá sus roles.
+
+<Note>
+  Si tu organización permite que cualquiera cree su cuenta, no hace falta invitar a nadie. Esa opción se elige en [Acceso y seguridad](/es/ailita/admin/acceso-y-seguridad).
+</Note>
+
+## Ver y administrar una cuenta
+
+Al abrir a una persona ves su estado, si su email está verificado, su segundo factor, cuándo se creó la cuenta y su último ingreso. También ves sus dispositivos y su actividad reciente.
+
+Desde esa pantalla podés:
+
+- **Desactivar** la cuenta. Se cierran sus sesiones y la persona no puede ingresar.
+- **Reactivar** una cuenta desactivada.
+- Cambiar sus roles.
+
+<Warning>
+  No podés desactivar ni eliminar tu propia cuenta. El Backoffice responde "No podés hacer eso sobre tu propia cuenta." Pedile a otra persona administradora que lo haga.
+</Warning>
+
+### Seguridad de la cuenta
+
+La tarjeta **Seguridad** sirve para cuando alguien pierde su teléfono o sospechás que alguien más entró a su cuenta. Tiene tres acciones:
+
+- **Cerrar todas las sesiones**: la persona tiene que volver a ingresar en todos sus dispositivos.
+- **Reiniciar segundo factor**: se quitan su app de autenticación y sus passkeys, y la persona las configura de nuevo en su próximo ingreso. Antes de hacerlo, confirmá su identidad por otro canal, como en [Recuperación de acceso](/es/ailita/admin/recuperacion-de-acceso).
+- **Eliminar usuario**: borra la cuenta y no se puede deshacer. Solo una persona administradora de la organización puede eliminar un usuario: las personas no pueden eliminar su propia cuenta.
+
+Si el Backoffice te pide confirmar tu identidad antes de alguna de estas acciones, seguí los pasos que se explican en [El Backoffice](/es/ailita/admin/introduccion) y repetí la acción.
+
+## Si algo falla
+
+Mirá [Solución de problemas](/es/ailita/admin/problemas).
 
 <NecesitasAyuda />
