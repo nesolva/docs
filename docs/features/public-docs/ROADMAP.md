@@ -37,16 +37,16 @@ manage their account, recover access, fix common problems, and find support. Spa
 ### Phase 1: foundation (ships a clean site with stubs)
 | Task | Repo | Depends on | Status | PR | Note |
 |---|---|---|---|---|---|
-| [T-01](tasks/T-01.md) Remove template, set up skeleton, content check | nesolva/docs | — | todo | | |
+| [T-01](tasks/T-01.md) Remove template, set up skeleton, content check | nesolva/docs | — | integrated | [#1](https://github.com/nesolva/docs/pull/1) | release PR [#2](https://github.com/nesolva/docs/pull/2) |
 
 ### Phase 2: Spanish content (parallel)
 | Task | Repo | Depends on | Status | PR | Note |
 |---|---|---|---|---|---|
-| [T-02](tasks/T-02.md) Ailita: getting started and your account (end users) | nesolva/docs | T-01 merged | todo | | |
-| [T-03](tasks/T-03.md) Ailita for organization administrators | nesolva/docs | T-01 merged | todo | | |
-| [T-04](tasks/T-04.md) Ailita: recover access and troubleshooting | nesolva/docs | T-01 merged | todo | | |
-| [T-05](tasks/T-05.md) Alfred section | nesolva/docs | T-01 merged | todo | | |
-| [T-06](tasks/T-06.md) Help: support, status, changelog, data and privacy | nesolva/docs | T-01 merged | todo | | |
+| [T-02](tasks/T-02.md) Ailita: getting started and your account (end users) | nesolva/docs | T-01 merged | in progress | | |
+| [T-03](tasks/T-03.md) Ailita for organization administrators | nesolva/docs | T-01 merged | in progress | | |
+| [T-04](tasks/T-04.md) Ailita: recover access and troubleshooting | nesolva/docs | T-01 merged | in progress | | |
+| [T-05](tasks/T-05.md) Alfred section | nesolva/docs | T-01 merged | in progress | | |
+| [T-06](tasks/T-06.md) Help: support, status, changelog, data and privacy | nesolva/docs | T-01 merged | in progress | | |
 
 ### Phase 3: English
 | Task | Repo | Depends on | Status | PR | Note |
@@ -64,5 +64,6 @@ manage their account, recover access, fix common problems, and find support. Spa
 - Should the public docs state the password minimum length? Not stated for now. (Nicolás)
 
 ## Log
+- 2026-11-05: T-01 integrated (#1). Phase 2 started from release/public-docs-p2, cut from release/public-docs-p1.
 - 2026-11-04: plan created. The Ailita SDK pages were removed from the public site, and the repo history was
   replaced with a single commit.
