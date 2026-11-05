@@ -1,0 +1,64 @@
+---
+title: "The Backoffice"
+description: "The console for managing your organisation in Ailita."
+icon: "building"
+---
+
+import { NeedHelp } from "/snippets/need-help.mdx";
+
+**Ailita Backoffice** is the console where you manage who can sign in to your organisation's products with Ailita. From here you invite people, define roles, choose how they sign in, connect your domain and help whoever lost access, without asking Nesolva for anything.
+
+## Who can use it
+
+Accounts with administration permissions over an organisation can enter the Backoffice. The sections you see depend on the permissions your account has.
+
+- If your account doesn't administer any organisation, the Backoffice tells you with the message "Your account is not an administrator of any organisation. Ask whoever manages yours for access." Do what it says: ask an administrator of your organisation for access.
+- If you can enter but don't see any section, your account has no administration permissions. Ask another administrator to review your roles.
+
+Administrators always need a second factor to sign in. If you haven't set up yours yet, do it from **My account**. See [Security](/en/ailita/cuenta/seguridad).
+
+## Find your way around the Backoffice
+
+The sections are inside **My organisation**. The header has three shortcuts:
+
+- **My account** opens Ailita ID, your personal account.
+- **Sign out** ends your session.
+- The **ES / EN** switch changes the language.
+
+| Section | What it's for |
+|---|---|
+| **Users** | Find people, invite, disable, close sessions. See [Users and invitations](/en/ailita/admin/usuarios-e-invitaciones). |
+| **Roles** | Group permissions into roles. See [Roles](/en/ailita/admin/roles). |
+| **Access & security** | Choose how people sign in and the session rules. See [Access and security](/en/ailita/admin/acceso-y-seguridad). |
+| **Domains** and **Corporate SSO** | Verify your domain and sign in with Microsoft or Google. See [Domains and corporate SSO](/en/ailita/admin/dominios-y-sso). |
+| **Billing mailbox** | Connect the mailbox Alfred reads. See [Billing mailbox](/en/ailita/admin/casilla-de-facturacion). |
+| **Access recovery** | Handle requests from people who lost their second factor. See [Access recovery](/en/ailita/admin/recuperacion-de-acceso). |
+| **Contracted apps** | See the products your people can use. To add one, talk to Nesolva. |
+| **Integrations** | Credentials for external systems. Below. |
+| **Activity** | Your organisation's recent security events. |
+
+## Confirm it's you to make changes
+
+Before you make a change, the Backoffice asks you to confirm your identity. You see the **Confirm it's you to make changes** screen.
+
+<Steps>
+  <Step title="Confirm your identity">
+    Select **Confirm identity** and follow the steps on the screen.
+  </Step>
+  <Step title="Return to the same screen">
+    Ailita takes you back to where you were.
+  </Step>
+  <Step title="Repeat the action">
+    The change hasn't been made yet. Do it again.
+  </Step>
+</Steps>
+
+## Integrations
+
+You set up integrations with external systems together with Nesolva: write to us to set one up. When you generate or regenerate a credential, the new secret is shown only once. Save it before you select **I've saved it**, because you can't see it again afterwards.
+
+## If something fails
+
+See [Troubleshooting](/en/ailita/admin/problemas), with the Backoffice messages and what to do about each one.
+
+<NeedHelp />

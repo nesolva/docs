@@ -1,0 +1,76 @@
+---
+title: "Roles"
+description: "What a role is and how to create your organisation's roles."
+icon: "user-shield"
+---
+
+import { NeedHelp } from "/snippets/need-help.mdx";
+
+A role bundles permissions. Instead of granting permissions one by one, you assign a role to each person.
+
+## Types of role
+
+In **Roles** you see them in three groups:
+
+| Group | What it is |
+|---|---|
+| **Base** | Roles that come with Ailita. They can't be changed. |
+| **Product** | Roles for each product you've contracted, such as Alfred. They can't be changed. |
+| **Organisation** | The ones you create for your organisation. |
+
+Base and product roles are read-only. You build your organisation's roles from the permissions you hold.
+
+## Roles worth knowing
+
+### Organisation administrator
+
+Lets you manage your organisation in the Backoffice:
+
+- users, invitations, sessions, devices and activity;
+- roles;
+- the organisation: settings, session policy, domains, corporate sign-in and the billing mailbox;
+- approving or rejecting access recovery requests;
+- seeing integrations and regenerating their credentials.
+
+### Alfred operator
+
+The **Operator** role is the one people who work with invoices in Alfred need. It allows:
+
+- **Process documents**
+- **Download PDFs and document files**
+- **Read invoices**
+- **Download invoice PDFs**
+
+If someone sees the message "You don't have permission to claim tasks." in Alfred, they're missing this role. Assign it from their page in [Users](/en/ailita/admin/usuarios-e-invitaciones).
+
+## Create a role
+
+<Steps>
+  <Step title="Open the form">
+    In **Roles**, select **New role**.
+  </Step>
+  <Step title="Add a name and description">
+    Choose a name that isn't in use. If one like it already exists, the Backoffice responds "A role with that name already exists."
+  </Step>
+  <Step title="Choose the permissions">
+    Tick the permissions you want to include.
+  </Step>
+  <Step title="Save">
+    Save the role. You can now assign it to the people in your organisation.
+  </Step>
+</Steps>
+
+## Rules for granting permissions
+
+- **You can only grant permissions you hold yourself.** If you try to grant one you don't have, the Backoffice responds "You can only grant permissions you hold yourself…".
+- **Someone must remain to manage roles.** The organisation needs at least one active person with the permission to manage roles. If a change would leave it with nobody, the Backoffice doesn't allow it.
+
+## Assign roles to a person
+
+When you [invite a person](/en/ailita/admin/usuarios-e-invitaciones) you choose their role. Later, you can change roles from their page in **Users**.
+
+## If something fails
+
+See [Troubleshooting](/en/ailita/admin/problemas).
+
+<NeedHelp />

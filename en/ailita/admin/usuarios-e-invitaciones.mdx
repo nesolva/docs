@@ -1,0 +1,72 @@
+---
+title: "Users and invitations"
+description: "Invite your team and manage their accounts."
+icon: "users"
+---
+
+import { NeedHelp } from "/snippets/need-help.mdx";
+
+In **Users** you see the people in your organisation. You can search for them, invite others and manage each account.
+
+## Find people
+
+Search by exact email. The list shows the person, their status, their roles, whether they have a second factor and their last sign-in.
+
+| Status | What it means |
+|---|---|
+| **Active** | The account works normally. |
+| **Not verified** | The person hasn't confirmed their email yet. |
+| **Disabled** | Someone in your organisation disabled the account. |
+| **Locked** | The person's sign-in is locked. If you need help with a locked account, write to us. |
+
+## Invite a person
+
+<Steps>
+  <Step title="Open the form">
+    In **Users**, select **Invite user**.
+  </Step>
+  <Step title="Fill in the details">
+    Type the person's **Email** and choose their **Rol** (role). The role comes preselected as USER, and you can change it. To see what each role allows, see [Roles](/en/ailita/admin/roles).
+  </Step>
+  <Step title="Send the invitation">
+    Select **Send invitation**. The person gets an email with a link to create their account. The link expires after a few days.
+  </Step>
+</Steps>
+
+In **Invitations** you see the pending invitations, with the email, when it was sent and when it expires. From that list you can cancel an invitation.
+
+If the person already has an account, the Backoffice responds "That person already has an account." In that case you don't need to invite them: find them in the list and review their roles.
+
+<Note>
+  If your organisation lets anyone create an account, you don't need to invite anyone. You choose that option in [Access and security](/en/ailita/admin/acceso-y-seguridad).
+</Note>
+
+## View and manage an account
+
+When you open a person you see their status, whether their email is verified, their second factor, when the account was created and their last sign-in. You also see their devices and recent activity.
+
+From that screen you can:
+
+- **Disable** the account. Their sessions are closed and the person can't sign in.
+- **Reactivate** a disabled account.
+- Change their roles.
+
+<Warning>
+  You can't disable or delete your own account. The Backoffice responds "You can't do that to your own account." Ask another administrator to do it.
+</Warning>
+
+### Account security
+
+The **Security** card is for when someone loses their phone or you suspect unauthorised access to their account. It has three actions:
+
+- **Close all sessions**: the person has to sign in again on all their devices.
+- **Reset second factor**: their authenticator app and passkeys are removed, and the person sets them up again at their next sign-in. Before you do it, confirm their identity through another channel, as in [Access recovery](/en/ailita/admin/recuperacion-de-acceso).
+- **Delete user**: deletes the account and can't be undone. Only an administrator of the organisation can delete a user: people can't delete their own account.
+
+If the Backoffice asks you to confirm your identity before one of these actions, follow the steps explained in [The Backoffice](/en/ailita/admin/introduccion) and repeat the action.
+
+## If something fails
+
+See [Troubleshooting](/en/ailita/admin/problemas).
+
+<NeedHelp />

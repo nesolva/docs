@@ -1,0 +1,68 @@
+---
+title: "Domains and corporate SSO"
+description: "Verify your domain and sign in with Microsoft or Google."
+icon: "globe"
+---
+
+import { NeedHelp } from "/snippets/need-help.mdx";
+
+With corporate SSO, your people sign in with their Microsoft 365 or Google Workspace work account. To turn it on, you first verify that your organisation's domain is yours. A verified domain also enables the [billing mailbox](/en/ailita/admin/casilla-de-facturacion).
+
+## Verify your domain
+
+You need to be able to create records in your domain's DNS, or ask whoever manages it to do it.
+
+<Steps>
+  <Step title="Add the domain">
+    In **Domains**, add your organisation's domain, for example the one your work emails use.
+  </Step>
+  <Step title="Create the TXT record">
+    The Backoffice shows you a TXT record. Create it in your domain's DNS.
+  </Step>
+  <Step title="Verify it">
+    Select **Verify**. If the DNS hasn't updated yet, the Backoffice responds "We can't find the TXT record yet (DNS can take a few minutes)." Wait a while and select **Verify** again.
+  </Step>
+</Steps>
+
+Some domains can't be added:
+
+- Public mail domains, such as gmail.com or outlook.com, can't belong to an organisation.
+- A domain that another organisation already verified can't be verified again.
+
+## Set up corporate SSO
+
+In **Corporate SSO** you choose the provider: **Microsoft 365** or **Google Workspace**. Then you choose which application to use for sign-in:
+
+- **Nesolva's app**: you have nothing to set up.
+- **Own app**: you use an application your organisation registered with the provider. You enter its client ID and its secret.
+
+<Steps>
+  <Step title="Verify the domain">
+    The email domain has to be verified. If it isn't, the Backoffice responds "Verify the domain in Domains first."
+  </Step>
+  <Step title="Link your Microsoft organisation (Microsoft only)">
+    If you use Microsoft, select **Link Microsoft organisation**. Without this step, the Backoffice responds "Link your Microsoft organisation first."
+  </Step>
+  <Step title="Complete the setup">
+    Choose the email domain. Decide whether to create users automatically when they sign in with SSO: if you don't turn it on, people need an invitation to enter with SSO.
+  </Step>
+  <Step title="Turn it on">
+    Enable SSO and save.
+  </Step>
+</Steps>
+
+## What your people see
+
+When you turn on SSO, the sign-in screen shows **Continuar con Google** or **Continuar con Microsoft** (Continue with Google, Continue with Microsoft). If in [Access and security](/en/ailita/admin/acceso-y-seguridad) you chose **Corporate SSO only**, people go straight to the provider, without going through a password.
+
+<Tip>
+  Before switching to SSO only, check that you can sign in with SSO using a test account, so you don't leave your people without access.
+</Tip>
+
+If someone has trouble signing in with SSO, see [I can't sign in](/en/ailita/problemas/iniciar-sesion).
+
+## If something fails
+
+See [Troubleshooting](/en/ailita/admin/problemas).
+
+<NeedHelp />

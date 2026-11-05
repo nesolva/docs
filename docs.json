@@ -126,6 +126,119 @@
             ]
           }
         ]
+      },
+      {
+        "language": "en",
+        "tabs": [
+          {
+            "tab": "Home",
+            "icon": "house",
+            "groups": [
+              {
+                "group": "Home",
+                "pages": [
+                  "en/index"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Ailita",
+            "icon": "id-card",
+            "groups": [
+              {
+                "group": "Getting started",
+                "pages": [
+                  "en/ailita/introduccion",
+                  "en/ailita/crear-cuenta",
+                  "en/ailita/iniciar-sesion"
+                ]
+              },
+              {
+                "group": "Your account",
+                "pages": [
+                  "en/ailita/cuenta/datos-personales",
+                  "en/ailita/cuenta/seguridad",
+                  "en/ailita/cuenta/aplicaciones",
+                  "en/ailita/cuenta/dispositivos-y-sesiones",
+                  "en/ailita/cuenta/actividad"
+                ]
+              },
+              {
+                "group": "Recover access",
+                "pages": [
+                  "en/ailita/recuperar/contrasena",
+                  "en/ailita/recuperar/segundo-factor"
+                ]
+              },
+              {
+                "group": "Troubleshooting",
+                "pages": [
+                  "en/ailita/problemas/iniciar-sesion",
+                  "en/ailita/problemas/codigos-y-segundo-factor",
+                  "en/ailita/problemas/cuenta-e-invitaciones"
+                ]
+              },
+              {
+                "group": "For administrators",
+                "pages": [
+                  "en/ailita/admin/introduccion",
+                  "en/ailita/admin/usuarios-e-invitaciones",
+                  "en/ailita/admin/roles",
+                  "en/ailita/admin/acceso-y-seguridad",
+                  "en/ailita/admin/dominios-y-sso",
+                  "en/ailita/admin/casilla-de-facturacion",
+                  "en/ailita/admin/recuperacion-de-acceso",
+                  "en/ailita/admin/problemas"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Alfred",
+            "icon": "file-invoice",
+            "groups": [
+              {
+                "group": "Getting started",
+                "pages": [
+                  "en/alfred/introduccion",
+                  "en/alfred/ingresar"
+                ]
+              },
+              {
+                "group": "Daily work",
+                "pages": [
+                  "en/alfred/panel-y-tareas",
+                  "en/alfred/subir-factura",
+                  "en/alfred/revisar-tarea",
+                  "en/alfred/facturas",
+                  "en/alfred/ordenes-de-compra"
+                ]
+              },
+              {
+                "group": "Troubleshooting",
+                "pages": [
+                  "en/alfred/problemas"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Help",
+            "icon": "life-ring",
+            "groups": [
+              {
+                "group": "Help",
+                "pages": [
+                  "en/ayuda/soporte",
+                  "en/ayuda/preguntas-frecuentes",
+                  "en/ayuda/novedades",
+                  "en/ayuda/datos-y-privacidad"
+                ]
+              }
+            ]
+          }
+        ]
       }
     ]
   },

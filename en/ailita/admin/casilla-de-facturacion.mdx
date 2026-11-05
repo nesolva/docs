@@ -1,0 +1,55 @@
+---
+title: "Billing mailbox"
+description: "Connect the mailbox where your invoices arrive."
+icon: "inbox"
+---
+
+import { NeedHelp } from "/snippets/need-help.mdx";
+
+The billing mailbox is the email inbox where your organisation's invoices arrive. [Alfred](/en/alfred/introduccion) reads that mailbox to capture the invoices. To connect it, your organisation needs a [verified domain](/en/ailita/admin/dominios-y-sso) and a Microsoft mailbox.
+
+## Connect the mailbox
+
+<Steps>
+  <Step title="Save the address">
+    In **Billing mailbox**, type the mailbox address and save.
+  </Step>
+  <Step title="Connect it with Microsoft">
+    Select **Connect with Microsoft**.
+  </Step>
+  <Step title="Sign in with the mailbox's account">
+    Sign in with the **mailbox's** account, not your own. If you sign in with another account, the Backoffice responds "You signed in with another account. You must sign in with the mailbox's account."
+  </Step>
+  <Step title="Accept all the permissions">
+    Microsoft shows you a list of permissions. Accept them all. If you don't, the Backoffice responds "Microsoft didn't grant permanent access. Accept every permission."
+  </Step>
+</Steps>
+
+When it finishes, the Backoffice tells you "Mailbox connected. Alfred starts reading new invoices."
+
+## Mailbox statuses
+
+| Status | What to do |
+|---|---|
+| **Connected** | Nothing. Alfred is reading the mailbox. |
+| **Not connected yet** | Follow the steps above. |
+| **Disconnected** | Reconnect the mailbox. |
+
+## Reconnect the mailbox
+
+Sometimes Microsoft stops accepting the access, and the mailbox changes to **Disconnected**. Alfred doesn't read new invoices until you reconnect it.
+
+<Steps>
+  <Step title="Reconnect">
+    In **Billing mailbox**, select **Reconnect with Microsoft**.
+  </Step>
+  <Step title="Sign in again">
+    Sign in with the mailbox's account and accept all the permissions, as when you connected it.
+  </Step>
+</Steps>
+
+## If something fails
+
+See [Troubleshooting](/en/ailita/admin/problemas), where the messages for the Microsoft connection are.
+
+<NeedHelp />
