@@ -6,8 +6,78 @@ icon: "pen-to-square"
 
 import { NecesitasAyuda } from "/snippets/necesitas-ayuda.mdx";
 
-{/* stub */}
+Cuando una tarea queda en **Revisión manual**, Alfred necesita que una persona compare los datos extraídos con la factura original, los corrija si hace falta y la finalice.
 
-Esta página va a explicar: Cómo tomar una tarea, corregir los datos extraídos y finalizarla.
+## Antes de empezar
+
+Necesitás el rol **Operador**. Si al tomar una tarea ves **No tenés permiso para tomar tareas**, pedile a quien administra tu organización que te lo asigne.
+
+## La pantalla de la tarea
+
+Al abrir una tarea ves **Tarea #** seguido del número. La pantalla tiene dos partes:
+
+- de un lado, los **campos extraídos** de la factura;
+- del otro, el **Documento original**, que también podés descargar.
+
+Comparalos para detectar diferencias.
+
+## Cuánta confianza tiene Alfred en cada campo
+
+Junto a los campos extraídos, Alfred muestra con cuánta confianza los leyó. Es una ayuda para decidir dónde mirar primero:
+
+- Un campo con confianza alta probablemente es correcto, pero igual conviene revisarlo.
+- Un campo con confianza baja pide una mirada atenta: comparalo con el documento original y corregilo si hace falta.
+
+La confianza no reemplaza tu revisión. La decisión final es tuya.
+
+## Tomar la tarea
+
+<Steps>
+  <Step title="Tomá la tarea">
+    Hacé clic en **Tomar tarea**. Alfred muestra **Tarea tomada** y marca la tarea como **La tomaste vos**.
+  </Step>
+  <Step title="Editá los campos">
+    Hacé clic en **Editar campos** y corregí los datos que no coincidan con el documento original.
+  </Step>
+  <Step title="Guardá y finalizá">
+    Hacé clic en **Guardar y finalizar**. Alfred te pregunta **¿Seguro que querés finalizar esta tarea?**. Confirmá con **Sí, finalizar**.
+  </Step>
+</Steps>
+
+<Note>
+  Mientras tenés la tarea tomada, otros operadores no pueden tomarla. Si otra persona la toma antes que vos, Alfred te avisa con **La tomó otro operador.**
+</Note>
+
+### Si falta un dato obligatorio
+
+Si intentás finalizar con un campo obligatorio vacío, Alfred no finaliza la tarea y te indica qué campo falta. Completalo y volvé a hacer clic en **Guardar y finalizar**. Mirá el detalle en [Solución de problemas](/es/alfred/problemas).
+
+### Si te pide confirmar que sos vos
+
+Antes de algunos cambios, Alfred te pide que confirmes tu identidad. Se abre una ventana de Ailita: hacé clic en **Confirmar con Ailita** y seguí los pasos. Si no se abre, permití las ventanas emergentes. Mirá cómo en [Solución de problemas](/es/alfred/problemas#permitir-ventanas-emergentes).
+
+## Corregir una tarea finalizada
+
+Si encontrás un error después de finalizar, podés volver a tomar la tarea y corregirla:
+
+1. Abrí la tarea en estado **Finalizada**.
+2. Hacé clic en **Tomar tarea**.
+3. Corregí los campos con **Editar campos**.
+4. Hacé clic en **Guardar y finalizar** y confirmá.
+
+## Historial de estados
+
+Hacé clic en la etiqueta de estado de la tarea para abrir el **Historial de estados**. Ahí ves cómo cambió la tarea a lo largo del tiempo. Cuando una persona la revisó, también ves **Verificada por** seguido de su nombre.
+
+## Próximos pasos
+
+<CardGroup cols={2}>
+  <Card title="Panel y tareas" icon="table-list" href="/es/alfred/panel-y-tareas">
+    Qué significa cada estado.
+  </Card>
+  <Card title="Buscar facturas" icon="magnifying-glass" href="/es/alfred/facturas">
+    Encontrá una factura ya procesada.
+  </Card>
+</CardGroup>
 
 <NecesitasAyuda />
