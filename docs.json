@@ -1,7 +1,7 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Nesolva | Docs",
+  "name": "Nesolva | Ayuda",
   "colors": {
     "primary": "#133e8b",
     "light": "#3b649b",
@@ -12,79 +12,122 @@
     "dark": "/images/faviconw.png"
   },
   "navigation": {
-    "tabs": [
+    "languages": [
       {
-        "tab": "Guides",
-        "groups": [
+        "language": "es",
+        "default": true,
+        "tabs": [
           {
-            "group": "Getting started",
-            "pages": [
-              "index",
-              "quickstart",
-              "development"
+            "tab": "Inicio",
+            "icon": "house",
+            "groups": [
+              {
+                "group": "Inicio",
+                "pages": [
+                  "es/index"
+                ]
+              }
             ]
           },
           {
-            "group": "Customization",
-            "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+            "tab": "Ailita",
+            "icon": "id-card",
+            "groups": [
+              {
+                "group": "Primeros pasos",
+                "pages": [
+                  "es/ailita/introduccion",
+                  "es/ailita/crear-cuenta",
+                  "es/ailita/iniciar-sesion"
+                ]
+              },
+              {
+                "group": "Tu cuenta",
+                "pages": [
+                  "es/ailita/cuenta/datos-personales",
+                  "es/ailita/cuenta/seguridad",
+                  "es/ailita/cuenta/aplicaciones",
+                  "es/ailita/cuenta/dispositivos-y-sesiones",
+                  "es/ailita/cuenta/actividad"
+                ]
+              },
+              {
+                "group": "Recuperar el acceso",
+                "pages": [
+                  "es/ailita/recuperar/contrasena",
+                  "es/ailita/recuperar/segundo-factor"
+                ]
+              },
+              {
+                "group": "Solución de problemas",
+                "pages": [
+                  "es/ailita/problemas/iniciar-sesion",
+                  "es/ailita/problemas/codigos-y-segundo-factor",
+                  "es/ailita/problemas/cuenta-e-invitaciones"
+                ]
+              },
+              {
+                "group": "Para administradores",
+                "pages": [
+                  "es/ailita/admin/introduccion",
+                  "es/ailita/admin/usuarios-e-invitaciones",
+                  "es/ailita/admin/roles",
+                  "es/ailita/admin/acceso-y-seguridad",
+                  "es/ailita/admin/dominios-y-sso",
+                  "es/ailita/admin/casilla-de-facturacion",
+                  "es/ailita/admin/recuperacion-de-acceso",
+                  "es/ailita/admin/problemas"
+                ]
+              }
             ]
           },
           {
-            "group": "Writing content",
-            "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+            "tab": "Alfred",
+            "icon": "file-invoice",
+            "groups": [
+              {
+                "group": "Primeros pasos",
+                "pages": [
+                  "es/alfred/introduccion",
+                  "es/alfred/ingresar"
+                ]
+              },
+              {
+                "group": "Trabajo diario",
+                "pages": [
+                  "es/alfred/panel-y-tareas",
+                  "es/alfred/subir-factura",
+                  "es/alfred/revisar-tarea",
+                  "es/alfred/facturas",
+                  "es/alfred/ordenes-de-compra"
+                ]
+              },
+              {
+                "group": "Solución de problemas",
+                "pages": [
+                  "es/alfred/problemas"
+                ]
+              }
             ]
           },
           {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "API reference",
-        "groups": [
-          {
-            "group": "API documentation",
-            "pages": [
-              "api-reference/introduction"
-            ]
-          },
-          {
-            "group": "Endpoint examples",
-            "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+            "tab": "Ayuda",
+            "icon": "life-ring",
+            "groups": [
+              {
+                "group": "Ayuda",
+                "pages": [
+                  "es/ayuda/soporte",
+                  "es/ayuda/preguntas-frecuentes",
+                  "es/ayuda/novedades",
+                  "es/ayuda/datos-y-privacidad"
+                ]
+              }
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
+    ]
   },
   "logo": {
     "light": "/images/largens.png",
@@ -93,15 +136,10 @@
   "navbar": {
     "links": [
       {
-        "label": "Support",
+        "label": "Soporte",
         "href": "mailto:support+docs@nesolva.com"
       }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
+    ]
   },
   "contextual": {
     "options": [
@@ -121,5 +159,31 @@
       "github": "https://github.com/nesolva",
       "linkedin": "https://linkedin.com/company/nesolva"
     }
-  }
+  },
+  "redirects": [
+    {
+      "source": "/ailita/:slug*",
+      "destination": "/es/ailita/introduccion"
+    },
+    {
+      "source": "/essentials/:slug*",
+      "destination": "/es"
+    },
+    {
+      "source": "/ai-tools/:slug*",
+      "destination": "/es"
+    },
+    {
+      "source": "/api-reference/:slug*",
+      "destination": "/es"
+    },
+    {
+      "source": "/quickstart",
+      "destination": "/es"
+    },
+    {
+      "source": "/development",
+      "destination": "/es"
+    }
+  ]
 }
