@@ -6,8 +6,68 @@ icon: "shield-halved"
 
 import { NecesitasAyuda } from "/snippets/necesitas-ayuda.mdx";
 
-{/* stub */}
+En **Mi cuenta**, la sección **Seguridad** te deja cuidar cómo ingresás. Arriba ves el estado de tu cuenta: si la verificación en dos pasos está activa o si todavía no configuraste una app de autenticación.
 
-Esta página va a explicar: Cómo cambiar tu contraseña y configurar la verificación en dos pasos y las passkeys.
+<Note>
+Lo que ves acá depende de tu organización. Puede apagar las passkeys, y la fila de contraseña solo aparece en cuentas que tienen una.
+</Note>
+
+## App de autenticación
+
+Una app de autenticación genera un código cada vez que ingresás. Sirve como segundo factor.
+
+### Configurarla
+
+<Steps>
+  <Step title="Tocá Configurar">
+    En **App de autenticación**, tocá **Configurar**.
+  </Step>
+  <Step title="Escaneá el código QR">
+    Usá Google Authenticator, 1Password, Authy o una app similar. Si no podés escanear, usá la clave que se muestra en pantalla.
+  </Step>
+  <Step title="Escribí el código de la app">
+    Ingresá el código que muestra la app para confirmar.
+  </Step>
+  <Step title="Guardá tus códigos de respaldo">
+    Copiá los códigos y guardalos en un lugar seguro, por ejemplo en tu gestor de contraseñas. Cada código sirve una sola vez y solo los ves esta vez.
+  </Step>
+</Steps>
+
+### Códigos de respaldo
+
+Los códigos de respaldo te dejan ingresar si no tenés la app a mano. Cuando la app está activa, ves cuántos códigos te quedan.
+
+- **Generar códigos nuevos** crea un juego nuevo.
+- Guardá los códigos nuevos en un lugar seguro. Si perdés el teléfono y los códigos, mirá [Perdí mi segundo factor](/es/ailita/recuperar/segundo-factor).
+
+### Desactivarla
+
+Tocá **Desactivar** en **App de autenticación**. Si tu organización exige un segundo factor, ves el mensaje **Tu organización requiere un segundo factor.** y tenés que configurar uno.
+
+## Passkeys
+
+Una passkey te deja ingresar con la huella, la cara o el PIN de tu dispositivo, sin escribir tu contraseña.
+
+- Para agregar una, tocá **Agregar passkey** y escribí un nombre que te ayude a reconocerla.
+- La lista muestra cuándo creaste cada passkey y cuándo la usaste por última vez.
+- Para sacar una, tocá **Quitar**.
+
+Si tu organización no permite passkeys, ves el mensaje **Tu organización no permite passkeys.** Usá otra forma de ingresar.
+
+## Contraseña
+
+En **Contraseña**, escribí tu contraseña actual y la nueva. Al cambiarla, se cierra tu sesión en los demás dispositivos.
+
+Una frase larga funciona mejor que símbolos raros.
+
+Si ves **La contraseña actual no es correcta.**, revisala o recuperala con [Olvidé mi contraseña](/es/ailita/recuperar/contrasena).
+
+## Sesiones activas
+
+El enlace a las sesiones activas te lleva a [Dispositivos y sesiones](/es/ailita/cuenta/dispositivos-y-sesiones).
+
+## Confirmar antes de un cambio
+
+Antes de un cambio sensible, Ailita puede mostrarte **Confirmá que sos vos**. Confirmá y repetí el cambio. Mirá [Iniciar sesión](/es/ailita/iniciar-sesion).
 
 <NecesitasAyuda />

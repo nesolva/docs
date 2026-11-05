@@ -6,8 +6,54 @@ icon: "life-ring"
 
 import { NecesitasAyuda } from "/snippets/necesitas-ayuda.mdx";
 
-{/* stub */}
+Cuando alguien pierde su teléfono y sus códigos de respaldo, no puede completar la verificación en dos pasos. Esa persona te pide ayuda y vos decidís si se la das. Los pedidos aparecen en **Recuperación de acceso**.
 
-Esta página va a explicar: Cómo aprobar o rechazar los pedidos de quienes perdieron su segundo factor.
+## Cómo llega un pedido
+
+La persona toca **¿Perdiste tu teléfono y tus códigos?** en la pantalla de verificación y envía un pedido, con un mensaje opcional para vos. Podés ver lo que ve ella en [Perdí mi segundo factor](/es/ailita/recuperar/segundo-factor).
+
+## Antes de aprobar: confirmá su identidad
+
+Antes de aprobar, confirmá que la persona es quien dice ser, por otro canal distinto al que usó para pedir la ayuda: una llamada, una videollamada o en persona. Es una buena práctica para cualquier organización. El Backoffice también te lo pide: sin esa confirmación responde "Confirmá la identidad de la persona por otro canal antes de aprobar."
+
+## Aprobar un pedido
+
+<Steps>
+  <Step title="Abrí el pedido">
+    En **Recuperación de acceso**, elegí el pedido y tocá **Aprobar…**.
+  </Step>
+  <Step title="Confirmá la identidad">
+    Marcá que confirmaste la identidad por otro canal (llamada, videollamada o en persona). Si querés, dejá una nota interna.
+  </Step>
+  <Step title="Enviá el enlace">
+    Tocá **Aprobar y enviar enlace**. La persona recibe por email un enlace de un solo uso, que sirve por un tiempo limitado.
+  </Step>
+</Steps>
+
+Con ese enlace, la persona confirma su contraseña, quita su segundo factor anterior y configura uno nuevo al volver a ingresar. Se cierran todas sus sesiones.
+
+## Rechazar un pedido
+
+Tocá **Rechazar…**. Podés escribir un motivo, y la persona lo ve. Si no pudiste confirmar su identidad, rechazá el pedido y explicale cómo seguir.
+
+## Estados de un pedido
+
+| Estado | Qué significa |
+|---|---|
+| Pendientes | Esperan tu decisión. |
+| **Aprobado · esperando al usuario** | Enviaste el enlace y la persona todavía no lo usó. |
+| **Rechazado** | Rechazaste el pedido. |
+| **Completado** | La persona recuperó el acceso. |
+| **Vencido** | El pedido venció. Si el Backoffice responde "El pedido venció: la persona tiene que pedirlo de nuevo.", la persona tiene que enviar otro. |
+
+Un pedido que ya decidiste no se puede decidir de nuevo: el Backoffice responde "Ese pedido ya fue resuelto."
+
+## Otra opción: reiniciar el segundo factor
+
+También podés [reiniciar el segundo factor](/es/ailita/admin/usuarios-e-invitaciones) de una persona desde su ficha en **Usuarios**. Antes, confirmá su identidad igual que arriba.
+
+## Si algo falla
+
+Mirá [Solución de problemas](/es/ailita/admin/problemas).
 
 <NecesitasAyuda />

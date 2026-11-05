@@ -6,8 +6,50 @@ icon: "lock"
 
 import { NecesitasAyuda } from "/snippets/necesitas-ayuda.mdx";
 
-{/* stub */}
+En **Acceso y seguridad** decidís cómo ven y usan Ailita las personas de tu organización: la imagen de la pantalla de ingreso, los métodos para ingresar y las reglas de sesión.
 
-Esta página va a explicar: Cómo elegir los métodos de ingreso, la creación de cuentas y las reglas de sesión.
+<Note>
+  Cuando guardás, el Backoffice avisa que los cambios se aplican desde el próximo ingreso. Las personas que ya tienen una sesión abierta no los notan hasta que vuelvan a ingresar.
+</Note>
+
+## Identidad visual
+
+En **Identidad visual** cargás el nombre de tu organización, la dirección de su logo, el color principal y el idioma predeterminado. La pantalla de ingreso de tu gente muestra el logo, el nombre y el color.
+
+## Cómo ingresan
+
+### Tipo de ingreso
+
+| Opción | Qué ve tu gente |
+|---|---|
+| **Contraseña** | Ingresa con su email y su contraseña. |
+| **Contraseña o código por email** | Además de la contraseña, puede pedir que le enviemos un código por email (**Enviarme un código por email**). |
+| **Solo SSO corporativo** | Va directo a Microsoft o Google para ingresar con su cuenta de trabajo. Primero tenés que [verificar tu dominio y configurar el SSO](/es/ailita/admin/dominios-y-sso). |
+
+### Creación de cuentas
+
+- **Solo con invitación**: las personas pueden crear su cuenta únicamente con una [invitación](/es/ailita/admin/usuarios-e-invitaciones). Quien lo intenta sin invitación ve "Esta organización solo admite usuarios invitados."
+- **Abierta**: cualquier persona puede crear su cuenta desde la pantalla de ingreso con **Crear cuenta**.
+
+### Opciones que activás o desactivás
+
+- **Passkeys**: si están activadas, tu gente ve **Ingresar con passkey** y puede agregar passkeys en su cuenta. Si las desactivás, ve "Tu organización no permite passkeys."
+- **App de autenticación**: permite usar un código de una app como segundo factor.
+- **Recuperar la contraseña por email**: muestra el enlace **¿Olvidaste tu contraseña?** en la pantalla de ingreso.
+
+## Sesiones y fricción
+
+- **Segundo factor obligatorio para todas las personas**: si lo activás, quien no tenga un segundo factor ve **Protegé tu cuenta** y lo configura antes de seguir. Las personas administradoras siempre necesitan un segundo factor, esté o no activada esta opción.
+- **Duración máxima de la sesión**: cuánto tiempo puede durar una sesión en total.
+- **Tiempo de inactividad**: cuánto tiempo sin actividad antes de cerrar la sesión.
+- **Cada cuánto volver a pedir el segundo factor**.
+- **Recordar dispositivo**.
+- **Máximo de sesiones simultáneas** por persona.
+
+Elegí los valores que mejor se ajusten a cómo trabaja tu organización. Cuanto más cortas son las sesiones, más seguido tiene que ingresar tu gente.
+
+## Si algo falla
+
+Mirá [Solución de problemas](/es/ailita/admin/problemas).
 
 <NecesitasAyuda />

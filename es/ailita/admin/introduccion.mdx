@@ -6,8 +6,59 @@ icon: "building"
 
 import { NecesitasAyuda } from "/snippets/necesitas-ayuda.mdx";
 
-{/* stub */}
+**Ailita Backoffice** es la consola donde administrás quiénes pueden ingresar a los productos de tu organización con Ailita. Desde acá invitás personas, definís roles, elegís cómo ingresan, conectás tu dominio y ayudás a quien perdió el acceso, sin pedirle nada a Nesolva.
 
-Esta página va a explicar: Qué es el Backoffice, quién puede usarlo y cómo confirmar tu identidad antes de hacer cambios.
+## Quién puede usarlo
+
+Pueden entrar al Backoffice las cuentas con permisos de administración sobre una organización. Las secciones que ves dependen de los permisos que tenga tu cuenta.
+
+- Si tu cuenta no administra ninguna organización, el Backoffice te lo avisa con el mensaje "Tu cuenta no es administradora de ninguna organización. Pedile acceso a quien administre la tuya." Hacé lo que dice: pedile acceso a una persona administradora de tu organización.
+- Si podés entrar pero no ves ninguna sección, tu cuenta no tiene permisos de administración. Pedile a otra persona administradora que revise tus roles.
+
+Las personas administradoras siempre necesitan un segundo factor para ingresar. Si todavía no configuraste el tuyo, hacelo desde **Mi cuenta**. Mirá [Seguridad](/es/ailita/cuenta/seguridad).
+
+## Moverte por el Backoffice
+
+Las secciones están dentro de **Mi organización**. El encabezado tiene tres accesos:
+
+- **Mi cuenta** abre Ailita ID, tu cuenta personal.
+- **Salir** cierra tu sesión.
+- El selector **ES / EN** cambia el idioma.
+
+| Sección | Para qué sirve |
+|---|---|
+| **Usuarios** | Buscar personas, invitar, desactivar, cerrar sesiones. Mirá [Usuarios e invitaciones](/es/ailita/admin/usuarios-e-invitaciones). |
+| **Roles** | Agrupar permisos en roles. Mirá [Roles](/es/ailita/admin/roles). |
+| **Acceso y seguridad** | Elegir cómo ingresan las personas y las reglas de sesión. Mirá [Acceso y seguridad](/es/ailita/admin/acceso-y-seguridad). |
+| **Dominios** y **SSO corporativo** | Verificar tu dominio e ingresar con Microsoft o Google. Mirá [Dominios y SSO](/es/ailita/admin/dominios-y-sso). |
+| **Casilla de facturación** | Conectar la casilla que lee Alfred. Mirá [Casilla de facturación](/es/ailita/admin/casilla-de-facturacion). |
+| **Recuperación de acceso** | Atender los pedidos de quienes perdieron su segundo factor. Mirá [Recuperación de acceso](/es/ailita/admin/recuperacion-de-acceso). |
+| **Apps contratadas** | Ver los productos que puede usar tu gente. Para sumar uno, hablá con Nesolva. |
+| **Integraciones** | Credenciales para sistemas externos. Más abajo. |
+| **Actividad** | Los eventos de seguridad recientes de tu organización. |
+
+## Confirmá que sos vos para hacer cambios
+
+Antes de hacer un cambio, el Backoffice te pide que confirmes tu identidad. Ves la pantalla **Confirmá que sos vos para hacer cambios**.
+
+<Steps>
+  <Step title="Confirmá tu identidad">
+    Tocá **Confirmar identidad** y seguí los pasos de la pantalla.
+  </Step>
+  <Step title="Volvé a la misma pantalla">
+    Ailita te devuelve a donde estabas.
+  </Step>
+  <Step title="Repetí la acción">
+    El cambio todavía no se hizo. Volvé a hacerlo.
+  </Step>
+</Steps>
+
+## Integraciones
+
+Las integraciones con sistemas externos las configurás junto con Nesolva: escribinos para armar una. Cuando generás o regenerás una credencial, el secreto nuevo se muestra una sola vez. Guardalo antes de tocar **Ya lo guardé**, porque después no lo podés volver a ver.
+
+## Si algo falla
+
+Mirá [Solución de problemas](/es/ailita/admin/problemas), con los mensajes del Backoffice y qué hacer con cada uno.
 
 <NecesitasAyuda />
