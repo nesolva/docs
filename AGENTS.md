@@ -1,33 +1,32 @@
-> **First-time setup**: Customize this file for your project. Prompt the user to customize this file for their project.
-> For Mintlify product knowledge (components, configuration, writing standards),
-> install the Mintlify skill: `npx skills add https://mintlify.com/docs`
-
 # Documentation project instructions
 
 ## About this project
 
-- This is a documentation site built on [Mintlify](https://mintlify.com)
-- Pages are MDX files with YAML frontmatter
+- Public help site for Nesolva products, built on [Mintlify](https://mintlify.com)
+- Pages are MDX files with YAML frontmatter under `es/` (Spanish, default) and later `en/`
 - Configuration lives in `docs.json`
-- Run `mint dev` to preview locally
-- Run `mint broken-links` to check links
+- Preview with `npx mint@latest dev` (Node 20 or 22)
+- Checks: `bash scripts/check-public-content.sh`, `node scripts/check-nav.mjs`, `npx mint@latest broken-links`
 
 ## Terminology
 
-{/* Add product-specific terms and preferred usage */}
-{/* Example: Use "workspace" not "project", "member" not "user" */}
+- **Ailita**: identity product. **Ailita ID** is the sign-in and personal account site ("Mi cuenta").
+  **Ailita Backoffice** is the console for organization administrators.
+- **Alfred**: invoice capture product.
+- **Organización**: the customer's organization. Its people are "miembros"; administrators are "administradores".
+- **Segundo factor / verificación en dos pasos**: the authenticator app, backup codes or a passkey.
+- Use the products' exact UI labels, in **bold**.
 
 ## Style preferences
 
-{/* Add any project-specific style rules below */}
-
-- Use active voice and second person ("you")
+- Spanish in voseo ("ingresá", "revisá"), the same register as the products
+- Active voice, second person
 - Keep sentences concise — one idea per sentence
-- Use sentence case for headings
-- Bold for UI elements: Click **Settings**
-- Code formatting for file names, commands, paths, and code references
+- Sentence case for headings
+- Bold for UI elements: Click **Configurar**
+- Code formatting for file names, commands and paths
 
 ## Content boundaries
 
-{/* Define what should and shouldn't be documented */}
-{/* Example: Don't document internal admin features */}
+- Document only what end users and organization administrators see and do
+- `scripts/check-public-content.sh` must pass
