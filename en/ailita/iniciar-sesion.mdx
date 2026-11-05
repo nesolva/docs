@@ -1,0 +1,99 @@
+---
+title: "Sign in"
+description: "All the ways to sign in with Ailita."
+icon: "right-to-bracket"
+---
+
+import { NeedHelp } from "/snippets/need-help.mdx";
+
+When you open one of your organisation's applications, such as Alfred, you land on the Ailita sign-in screen. At the top you see your organisation's logo, name and colour, and the note **Continue to** followed by the application's name.
+
+<Note>
+The steps you see depend on your organisation: password, email code, passkey, Google or Microsoft, and whether a second factor is required. If a step on this page doesn't appear, your organisation doesn't use it.
+</Note>
+
+## Sign in step by step
+
+<Steps>
+  <Step title="Enter your email">
+    On **Good to see you.**, type your **Email** and select **Continue**.
+
+    - If you prefer a passkey, select **Sign in with a passkey** and use your device's face, finger or PIN.
+    - If your organisation uses Google or Microsoft, select **Continuar con Google** or **Continuar con Microsoft** (Continue with Google, Continue with Microsoft).
+    - If your organisation allows sign-up, you also see Don't have an account? with the **Create account** link. See [Create your account](/en/ailita/crear-cuenta).
+  </Step>
+  <Step title="Choose your organisation (if asked)">
+    If your email belongs to several organisations, **Choose your organisation** appears. Choose the one you want to enter.
+  </Step>
+  <Step title="Enter your password or use another option">
+    On **Your password**, type your password. From this screen you can also:
+
+    - select **Forgot your password?** to recover it. See [Forgot your password](/en/ailita/recuperar/contrasena);
+    - select **Email me a code instead**, if your organisation allows it;
+    - select **Use another email** to go back to the previous step.
+
+    If your organisation uses corporate SSO, you see your provider's button instead of the password. If SSO is the only way to sign in, you go straight to the provider.
+  </Step>
+  <Step title="Enter the code we emailed you (if asked)">
+    You'll see one of two screens:
+
+    - **Check your email**: we sent you a code.
+    - **Confirm it's you**: we sent you a code because it's the first time you sign in from this device.
+
+    Type the whole code and it's sent on its own. If it didn't arrive, select **Resend code**. You'll see **We sent you a new code.**
+  </Step>
+  <Step title="Enter your second factor (if you have one)">
+    On **Two-step verification**, type the code from your authenticator app or one of your backup codes.
+
+    Lost your phone and your codes? Select **Lost your phone and backup codes?** and follow [I lost my second factor](/en/ailita/recuperar/segundo-factor).
+  </Step>
+  <Step title="Protect your account (if your organisation requires it)">
+    If your organisation requires a second factor and you don't have one yet, **Protect your account** appears.
+
+    1. Scan the QR code with Google Authenticator, 1Password, Authy or a similar app. If you can't scan it, select **Can't scan? Enter this key:** and type the key into your app.
+    2. Type the code the app shows.
+    3. On **Save your backup codes**, select **Copy** and keep them somewhere safe. Each code works once, and you only see them this time. Then select **I saved them**.
+  </Step>
+  <Step title="Create a passkey (optional)">
+    On **Sign in faster next time**, select **Create a passkey** to sign in without typing your password. If you'd rather not, select **Not now**. You can add a passkey later from [Security](/en/ailita/cuenta/seguridad).
+  </Step>
+  <Step title="Decide what you share with the application (the first time)">
+    The first time an application asks for your information, **You choose what to share.** appears with the list of what the application will be able to do:
+
+    - recognise you when you come back;
+    - see your first and last name;
+    - see your email address;
+    - see the organisation you belong to;
+    - see your roles in the organisation;
+    - keep you signed in while you use it.
+
+    Select **Allow** to continue or **Cancel** to give no access. You can remove access later in [Connected apps](/en/ailita/cuenta/aplicaciones).
+  </Step>
+</Steps>
+
+When you finish, Ailita takes you back to the application. In the meantime you see **Checking your session…** and a note that we're taking you back to the application.
+
+## Confirm it's you
+
+Before a sensitive change, an application or your own account may ask you to confirm it. **Confirm it's you** appears and you can confirm with:
+
+- a code from your authenticator app;
+- a code we email you;
+- **Confirm with a passkey**.
+
+After you confirm, you return to the same page and repeat the change. If you don't have a second factor, you sign in again.
+
+## Sign out
+
+To sign out, choose **Cerrar sesión** (sign out) in **My account**. You'll see **You signed out**. To come back, select **Sign in again**.
+
+## If the application doesn't let you continue
+
+When an application sends you to sign in and something fails, **We can't continue** appears. Go back to the application and start again. If it keeps happening, contact that application's support.
+
+## If you can't sign in
+
+- See [I can't sign in](/en/ailita/problemas/iniciar-sesion) for the error messages.
+- See [Codes and second factor](/en/ailita/problemas/codigos-y-segundo-factor) if the code doesn't arrive or doesn't work.
+
+<NeedHelp />

@@ -1,0 +1,73 @@
+---
+title: "Security"
+description: "Password, authenticator app, backup codes and passkeys."
+icon: "shield-halved"
+---
+
+import { NeedHelp } from "/snippets/need-help.mdx";
+
+In **My account**, the **Security** section lets you look after how you sign in. At the top you see the status of your account: either two-step verification is enabled, or an authenticator app is not set up yet.
+
+<Note>
+What you see here depends on your organisation. It can turn passkeys off, and the password row only appears on accounts that have a password.
+</Note>
+
+## Authenticator app
+
+An authenticator app generates a code each time you sign in. It works as a second factor.
+
+### Set it up
+
+<Steps>
+  <Step title="Select Set up">
+    Under **Authenticator app**, select **Set up**.
+  </Step>
+  <Step title="Scan the QR code">
+    Use Google Authenticator, 1Password, Authy or a similar app. If you can't scan, use the key shown on the screen.
+  </Step>
+  <Step title="Type the code from the app">
+    Enter the code the app shows to confirm.
+  </Step>
+  <Step title="Save your backup codes">
+    Copy the codes and keep them somewhere safe, for example in your password manager. Each code works once, and you only see them this time.
+  </Step>
+</Steps>
+
+### Backup codes
+
+Backup codes let you sign in if you don't have the app at hand. While the app is on, you see how many codes you have left.
+
+- **Generate new codes** creates a new set.
+- Keep the new codes somewhere safe. If you lose your phone and your codes, see [I lost my second factor](/en/ailita/recuperar/segundo-factor).
+
+### Turn it off
+
+Select **Turn off** under **Authenticator app**. If your organisation requires a second factor, you see the message **Your organisation requires a second factor.** and you have to set one up.
+
+## Passkeys
+
+A passkey lets you sign in with your device's face, finger or PIN, without typing your password.
+
+- To add one, select **Add a passkey** and type a name that helps you recognise it.
+- The list shows when you created each passkey and when you last used it.
+- To remove one, select **Remove**.
+
+If your organisation doesn't allow passkeys, you see the message **Your organisation doesn't allow passkeys.** Use another way to sign in.
+
+## Password
+
+Under **Password**, type your current password and the new one. When you change it, you're signed out on your other devices.
+
+A long phrase beats odd symbols.
+
+If you see **Your current password is wrong.**, check it or recover it with [Forgot your password](/en/ailita/recuperar/contrasena).
+
+## Active sessions
+
+The link to active sessions takes you to [Devices and sessions](/en/ailita/cuenta/dispositivos-y-sesiones).
+
+## Confirm before a change
+
+Before a sensitive change, Ailita may show you **Confirm it's you**. Confirm and repeat the change. See [Sign in](/en/ailita/iniciar-sesion).
+
+<NeedHelp />

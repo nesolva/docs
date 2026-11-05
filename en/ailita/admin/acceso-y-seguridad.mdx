@@ -1,0 +1,55 @@
+---
+title: "Access and security"
+description: "How the people in your organisation sign in."
+icon: "lock"
+---
+
+import { NeedHelp } from "/snippets/need-help.mdx";
+
+In **Access & security** you decide how the people in your organisation see and use Ailita: the look of the sign-in screen, the sign-in methods and the session rules.
+
+<Note>
+  When you save, the Backoffice tells you the changes apply from the next sign-in. People who already have an open session won't notice them until they sign in again.
+</Note>
+
+## Branding
+
+In **Branding** you set your organisation's name, the address of its logo, the primary colour and the default language. Your people's sign-in screen shows the logo, the name and the colour.
+
+## How people sign in
+
+### Sign-in method
+
+| Option | What your people see |
+|---|---|
+| **Password** | They sign in with their email and password. |
+| **Password or email code** | Besides the password, they can ask us to email them a code (**Email me a code instead**). |
+| **Corporate SSO only** | They go straight to Microsoft or Google to sign in with their work account. First you need to [verify your domain and set up SSO](/en/ailita/admin/dominios-y-sso). |
+
+### Account creation
+
+- **Invitation only**: people can create their account only with an [invitation](/en/ailita/admin/usuarios-e-invitaciones). Anyone who tries without one sees "This organisation only accepts invited users."
+- **Open**: anyone can create their account from the sign-in screen with **Create account**.
+
+### Options you turn on or off
+
+- **Passkeys**: if they're on, your people see **Sign in with a passkey** and can add passkeys to their account. If you turn them off, they see "Your organisation doesn't allow passkeys."
+- **Authenticator app**: lets people use a code from an app as a second factor.
+- **Password recovery by email**: shows the **Forgot your password?** link on the sign-in screen.
+
+## Sessions and friction
+
+- **Second factor required for everyone**: if you turn it on, anyone without a second factor sees **Protect your account** and sets one up before continuing. Administrators always need a second factor, whether or not this option is on.
+- Maximum session length: how long a session can last in total.
+- Idle timeout: how long without activity before the session is closed.
+- How often to ask for the second factor again.
+- Remember device.
+- Maximum concurrent sessions per person.
+
+Choose the values that best fit how your organisation works. The shorter the sessions, the more often your people have to sign in.
+
+## If something fails
+
+See [Troubleshooting](/en/ailita/admin/problemas).
+
+<NeedHelp />

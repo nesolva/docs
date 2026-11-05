@@ -1,0 +1,59 @@
+---
+title: "Access recovery"
+description: "Help someone who lost their second factor."
+icon: "life-ring"
+---
+
+import { NeedHelp } from "/snippets/need-help.mdx";
+
+When someone loses their phone and their backup codes, they can't complete two-step verification. That person asks you for help and you decide whether to give it. The requests appear in **Access recovery**.
+
+## How a request arrives
+
+The person selects **Lost your phone and backup codes?** on the verification screen and sends a request, with an optional message for you. You can see what they see in [I lost my second factor](/en/ailita/recuperar/segundo-factor).
+
+## Before approving: confirm their identity
+
+Before approving, confirm that the person is who they say they are, through a channel other than the one they used to ask for help: a call, a video call or in person. It's good practice for any organisation. The Backoffice also asks you to: without that confirmation it responds "Confirm the person's identity through another channel before approving."
+
+## Approve a request
+
+<Steps>
+  <Step title="Open the request">
+    In **Access recovery**, choose the request and select **Approve…**.
+  </Step>
+  <Step title="Confirm the identity">
+    Tick that you confirmed the identity through another channel (call, video call or in person). If you want, leave an internal note.
+  </Step>
+  <Step title="Send the link">
+    Select **Approve and send link**. The person receives a one-time link by email, valid for a limited time.
+  </Step>
+</Steps>
+
+With that link, the person confirms their password, removes their old second factor and sets up a new one when they sign in again. All their sessions are closed.
+
+## Reject a request
+
+Select **Reject…**. You can write a reason, and the person sees it. If you couldn't confirm their identity, reject the request and explain how to proceed.
+
+## Request statuses
+
+| Status | What it means |
+|---|---|
+| **Pending** | Waiting for your decision. |
+| **Approved · waiting for the user** | You sent the link and the person hasn't used it yet. |
+| **Rejected** | You rejected the request. |
+| **Completed** | The person recovered access. |
+| **Expired** | The request expired. If the Backoffice responds "The request expired: the person must ask again.", the person has to send another one. |
+
+A request you've already decided can't be decided again: the Backoffice responds "That request was already decided."
+
+## Another option: reset the second factor
+
+You can also [reset a person's second factor](/en/ailita/admin/usuarios-e-invitaciones) from their page in **Users**. First, confirm their identity just as above.
+
+## If something fails
+
+See [Troubleshooting](/en/ailita/admin/problemas).
+
+<NeedHelp />

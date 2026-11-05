@@ -1,0 +1,180 @@
+---
+title: "Troubleshooting"
+description: "Alfred messages and how to solve them."
+icon: "screwdriver-wrench"
+---
+
+import { NeedHelp } from "/snippets/need-help.mdx";
+
+Find here the message you see in Alfred. Each entry says what it means and what to do. If the problem continues, [ask for help](/en/ayuda/soporte).
+
+## Signing in and access
+
+### We couldn't complete the sign-in. Please try again.
+
+- **Symptom:** `We couldn't complete the sign-in. Please try again.`
+- **Why:** the sign-in with Ailita didn't finish properly.
+- **What to do:** select **Sign in with Ailita** again and repeat the sign-in. If you have doubts about your sign-in details, see [Sign-in problems](/en/ailita/problemas/iniciar-sesion).
+- **Still stuck:** [ask for help](/en/ayuda/soporte).
+
+### Alfred isn't enabled yet
+
+- **Symptom:** `Alfred isn't enabled yet` or `doesn't have Alfred enabled yet. Ask Nesolva to enable it.` (with your organisation's name at the start).
+- **Why:** your organisation doesn't have Alfred enabled.
+- **What to do:** ask Nesolva to enable it. If you signed in with an account that isn't the right one, select **Usar otra cuenta** (use another account).
+- **Still stuck:** [ask for help](/en/ayuda/soporte).
+
+### We couldn't reach Alfred.
+
+- **Symptom:** `We couldn't reach Alfred.`, with a button to retry.
+- **Why:** the service didn't respond. It could be a passing problem or a problem with your connection.
+- **What to do:** check your connection and select **Retry**. If it doesn't improve, wait a few minutes and try again.
+- **Still stuck:** [ask for help](/en/ayuda/soporte).
+
+## Tasks
+
+### You don't have permission to claim tasks.
+
+- **Symptom:** `You don't have permission to claim tasks.`
+- **Why:** your account doesn't have the **Operator** role.
+- **What to do:** ask whoever manages your organisation to assign you the **Operator** role in Ailita.
+- **Still stuck:** [ask for help](/en/ayuda/soporte).
+
+### Already reviewed by an operator.
+
+- **Symptom:** `Already reviewed by an operator.` when claiming a task.
+- **Why:** the task was already reviewed.
+- **What to do:** you don't need to do anything. If you find a mistake in it, you can correct it. See [Review a task](/en/alfred/revisar-tarea#correct-a-finalised-task).
+- **Still stuck:** [ask for help](/en/ayuda/soporte).
+
+### Claimed by another operator.
+
+- **Symptom:** `Claimed by another operator.` or `This task was just claimed by another operator.`
+- **Why:** someone else claimed the task before you.
+- **What to do:** choose another task in **MANUAL_REVIEW**. If you need that particular one, coordinate with your team.
+- **Still stuck:** [ask for help](/en/ayuda/soporte).
+
+### Task is no longer available for review.
+
+- **Symptom:** `Task is no longer available for review.`
+- **Why:** the task changed status while you were looking at it.
+- **What to do:** go back to the dashboard and check the task's current status. See [Dashboard and tasks](/en/alfred/panel-y-tareas).
+- **Still stuck:** [ask for help](/en/ayuda/soporte).
+
+### Unable to claim task
+
+- **Symptom:** `Unable to claim task…` or `Connection error…`
+- **Why:** the action failed or there was a connection problem.
+- **What to do:** check your connection and select **Claim Task** again.
+- **Still stuck:** [ask for help](/en/ayuda/soporte).
+
+### A required field is empty
+
+- **Symptom:** `Critical field '<field>' is missing after corrections` or `Field '<field>' must not be empty`. The field's name appears in place of `<field>`.
+- **Why:** you tried to finalise with a required field left empty.
+- **What to do:** select **Edit Fields**, fill in the field the message names with the data from the original document, and select **Submit & Finalize** again.
+- **Still stuck:** [ask for help](/en/ayuda/soporte).
+
+## Uploading invoices
+
+### Only PDF files are allowed
+
+- **Symptom:** `Only PDF files are allowed` or `Upload failed`.
+- **Why:** the file isn't a PDF, or the upload failed. If the file is too large, the upload can also fail.
+- **What to do:** upload a PDF file. If it's very large, split or compress it and try again.
+- **Still stuck:** [ask for help](/en/ayuda/soporte).
+
+## Viewing an invoice's PDF
+
+### Failed to load PDF
+
+- **Symptom:** `Failed to load PDF` or `PDF not available`.
+- **Why:** the viewer couldn't show the document.
+- **What to do:** reload the page. If you still can't see it, wait a few minutes and try again.
+- **Still stuck:** [ask for help](/en/ayuda/soporte).
+
+## Searching invoices
+
+### Pick a range of one month at most
+
+- **Symptom:** `Pick a range of one month at most, or add a … filter.`
+- **Why:** you're searching by date alone and the range is too long.
+- **What to do:** shorten the date range or add another filter, for example supplier. See [Search invoices](/en/alfred/facturas).
+- **Still stuck:** [ask for help](/en/ayuda/soporte).
+
+### Choose a currency
+
+- **Symptom:** `Choose a currency to filter by amount.`
+- **Why:** you searched by total amount without choosing a currency.
+- **What to do:** choose a currency in the filters.
+- **Still stuck:** [ask for help](/en/ayuda/soporte).
+
+## Purchase orders
+
+### That file type is not accepted
+
+- **Symptom:** `That file type is not accepted…` or `The file is larger than … MB.`
+- **Why:** the file is a type Alfred doesn't accept for purchase orders, or it's too large.
+- **What to do:** upload a PDF, an image, a Word file, an Excel file or a CSV. If the file is very large, split or compress it.
+- **Still stuck:** [ask for help](/en/ayuda/soporte).
+
+## Confirm it's you
+
+Before some changes, Alfred opens an Ailita window so you can confirm your identity (**Confirm with Ailita**). These messages appear if something goes wrong at that step.
+
+### Your browser blocked the Ailita window
+
+- **Symptom:** `Your browser blocked the Ailita window. Allow pop-ups for Alfred…`
+- **Why:** your browser blocks Alfred's pop-ups.
+- **What to do:** allow pop-ups for Alfred and repeat the action. Follow the steps in [Allow pop-ups](#allow-pop-ups).
+- **Still stuck:** [ask for help](/en/ayuda/soporte).
+
+### The window closed before you confirmed.
+
+- **Symptom:** `The window closed before you confirmed. The change was not saved.`
+- **Why:** you closed the Ailita window before finishing.
+- **What to do:** repeat the change and complete the confirmation without closing the window.
+- **Still stuck:** [ask for help](/en/ayuda/soporte).
+
+### You confirmed with another Ailita account
+
+- **Symptom:** `You confirmed with another Ailita account…`
+- **Why:** in the Ailita window you signed in with a different account from the one you use in Alfred.
+- **What to do:** repeat the change and confirm with the same account you used to sign in to Alfred.
+- **Still stuck:** [ask for help](/en/ayuda/soporte).
+
+### This change needs your authenticator app or passkey.
+
+- **Symptom:** `This change needs your authenticator app or passkey.`
+- **Why:** for this change, Ailita asks you for a second factor.
+- **What to do:** repeat the change and confirm with your authenticator app or your passkey. If you lost access to your second factor, see [I lost my second factor](/en/ailita/recuperar/segundo-factor).
+- **Still stuck:** [ask for help](/en/ayuda/soporte).
+
+## Allow pop-ups
+
+These steps are general. Menu names can vary with your browser version.
+
+<Tabs>
+  <Tab title="Chrome">
+    1. When Chrome blocks a window, an icon appears in the address bar. Select it.
+    2. Choose to always allow Alfred's pop-ups and select **Done**.
+    3. Go back to Alfred and repeat the action.
+
+    If you don't see the icon, open Chrome's settings, look for **Site settings** and check **Pop-ups and redirects**. Add Alfred's site to the allowed list.
+  </Tab>
+  <Tab title="Edge">
+    1. When Edge blocks a window, an icon appears in the address bar. Select it.
+    2. Choose to always allow Alfred's pop-ups and redirects and select **Done**.
+    3. Go back to Alfred and repeat the action.
+
+    If you don't see the icon, open Edge's settings, look for the site permissions and check **Pop-ups and redirects**. Add Alfred's site to the allowed list.
+  </Tab>
+  <Tab title="Safari">
+    1. In the Safari menu, open **Settings** (or **Preferences**, depending on your version).
+    2. Go to **Websites** and choose **Pop-up Windows** in the list on the left.
+    3. Find Alfred's site and choose **Allow**.
+    4. Go back to Alfred and repeat the action.
+  </Tab>
+</Tabs>
+
+<NeedHelp />

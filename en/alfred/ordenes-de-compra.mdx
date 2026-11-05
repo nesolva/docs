@@ -1,0 +1,48 @@
+---
+title: "Purchase orders"
+description: "Build the file for each purchase order."
+icon: "folder-open"
+---
+
+import { NeedHelp } from "/snippets/need-help.mdx";
+
+<Note>
+  This module only appears if Nesolva enabled it for your organisation. If you don't see **Purchase orders** in Alfred and you need it, ask Nesolva to enable it.
+</Note>
+
+In **Purchase orders** you gather each order's documents and see what's missing to complete it.
+
+## Search for an order
+
+Search by the **full number** of the order. Each result shows whether the order is **Complete** or **Incomplete**.
+
+## Review an order
+
+When you open an order you see:
+
+- a checklist with the documents the order has and what's missing;
+- the **possible documents**, which Alfred thinks might belong to the order;
+- a timeline and a history of what happened with the order.
+
+### Confirm the possible documents
+
+For each possible document, say whether it belongs:
+
+- **It belongs**: the document is added to the order.
+- **Not this order**: the document isn't added.
+
+### Upload documents
+
+Select **Upload documents** to add files to the order. Alfred accepts PDFs, images, Word, Excel and CSV files. If a file is too large, split or compress it.
+
+If Alfred rejects a file, see the messages in [Troubleshooting](/en/alfred/problemas).
+
+## Unlinked documents
+
+In **Unlinked** are the documents Alfred couldn't match to an order with certainty. For each one you can:
+
+- **Add to order**: choose the order it belongs to;
+- **Discard**: remove it from the list. You can restore it later;
+- accept Alfred's suggestion, if there is one.
+
+<NeedHelp />

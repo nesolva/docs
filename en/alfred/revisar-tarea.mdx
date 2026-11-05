@@ -1,0 +1,83 @@
+---
+title: "Review a task"
+description: "Claim a task, correct the fields and finalise it."
+icon: "pen-to-square"
+---
+
+import { NeedHelp } from "/snippets/need-help.mdx";
+
+When a task is in **MANUAL_REVIEW**, Alfred needs a person to compare the extracted data with the original invoice, correct it if needed and finalise the task.
+
+## Before you start
+
+You need the **Operator** role. If you see **You don't have permission to claim tasks.** when you claim a task, ask whoever manages your organisation to assign it to you.
+
+## The task screen
+
+When you open a task you see **Task #** followed by the number. The screen has two parts:
+
+- on one side, the **fields extracted** from the invoice;
+- on the other, the **Original document**, which you can also download.
+
+Compare them to spot differences.
+
+## How confident Alfred is in each field
+
+Next to the extracted fields, Alfred shows how confident it is in what it read. It helps you decide where to look first:
+
+- A field with high confidence is probably right, but it's still worth checking.
+- A field with low confidence needs a close look: compare it with the original document and correct it if needed.
+
+Confidence doesn't replace your review. The final decision is yours.
+
+## Claim the task
+
+<Steps>
+  <Step title="Claim the task">
+    Select **Claim Task**. Alfred shows **Tarea tomada** (task claimed) and marks the task as **Claimed by you**.
+  </Step>
+  <Step title="Edit the fields">
+    Select **Edit Fields** and correct any data that doesn't match the original document.
+  </Step>
+  <Step title="Save and finalise">
+    Select **Submit & Finalize**. Alfred asks **¿Seguro que querés finalizar esta tarea?** (are you sure you want to finalise this task?). Confirm with **Yes, Finalize**.
+  </Step>
+</Steps>
+
+<Note>
+  While you have the task claimed, other operators can't claim it. If someone else claims it before you, Alfred tells you with **Claimed by another operator.**
+</Note>
+
+### If a required field is missing
+
+If you try to finalise with a required field empty, Alfred doesn't finalise the task and tells you which field is missing. Fill it in and select **Submit & Finalize** again. See the details in [Troubleshooting](/en/alfred/problemas).
+
+### If you're asked to confirm it's you
+
+Before some changes, Alfred asks you to confirm your identity. An Ailita window opens: select **Confirm with Ailita** and follow the steps. If it doesn't open, allow pop-ups. See how in [Troubleshooting](/en/alfred/problemas#allow-pop-ups).
+
+## Correct a finalised task
+
+If you find a mistake after finalising, you can claim the task again and correct it:
+
+1. Open the task in **FINALIZED** status.
+2. Select **Claim Task**.
+3. Correct the fields with **Edit Fields**.
+4. Select **Submit & Finalize** and confirm.
+
+## State history
+
+Select the task's status badge to open the **State History**. There you see how the task changed over time. When a person has reviewed it, you also see **Verificada por** (verified by) followed by their name.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Dashboard and tasks" icon="table-list" href="/en/alfred/panel-y-tareas">
+    What each status means.
+  </Card>
+  <Card title="Search invoices" icon="magnifying-glass" href="/en/alfred/facturas">
+    Find an invoice that's already processed.
+  </Card>
+</CardGroup>
+
+<NeedHelp />

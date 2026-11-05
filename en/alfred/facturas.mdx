@@ -1,0 +1,56 @@
+---
+title: "Search invoices"
+description: "Find any processed invoice."
+icon: "magnifying-glass"
+---
+
+import { NeedHelp } from "/snippets/need-help.mdx";
+
+In **Invoices** you find the invoices Alfred has already processed and see the details of each one.
+
+## Before you start
+
+The **Operator** role includes reading invoices and downloading their PDFs. If you don't see the section or can't download the PDF, ask whoever manages your organisation to review your role.
+
+## Search for an invoice
+
+You can search by:
+
+- supplier,
+- RUT or tax ID,
+- purchase order,
+- country,
+- invoice date,
+- total amount,
+- category.
+
+Some searches have conditions:
+
+- **Total amount:** also choose a currency. If you don't, Alfred shows **Choose a currency to filter by amount.**
+- **Date:** if you search by date alone, pick a range of one month at most or add another filter. If you don't, Alfred shows **Pick a range of one month at most, or add a … filter.**
+
+## Choose the view
+
+You can see the results in two ways:
+
+- **Cards**: one card per invoice.
+- **Table**: one row per invoice.
+
+## See an invoice's details
+
+Select an invoice to open its details. There you see:
+
+- the supplier and the buyer;
+- the invoice's line items;
+- the addenda;
+- the extracted fields, each with its confidence. If the confidence is low, look at the field closely.
+
+If the invoice is still in review, **Open review task** appears. Select it to go to the task. See [Review a task](/en/alfred/revisar-tarea).
+
+From there you can also download the invoice's PDF.
+
+## If something doesn't work
+
+If the PDF doesn't open, see **Failed to load PDF** in [Troubleshooting](/en/alfred/problemas).
+
+<NeedHelp />

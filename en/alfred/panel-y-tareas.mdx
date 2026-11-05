@@ -1,0 +1,55 @@
+---
+title: "Dashboard and tasks"
+description: "Follow the status of every invoice received."
+icon: "table-list"
+---
+
+import { NeedHelp } from "/snippets/need-help.mdx";
+
+Every invoice Alfred receives creates a **task**. The dashboard shows you all the tasks and the status each one is in.
+
+## What the dashboard shows
+
+When you sign in to Alfred, under **Processing**, you see the **Recent tasks** list. Each row has:
+
+- the task,
+- the status,
+- the document,
+- when it was received.
+
+To narrow the list, use the filters for **status**, **Desde** (from) and **Hasta** (to).
+
+To open a task, select it. You'll see **Task #** followed by the task's number.
+
+## What each status means
+
+| Status | What it means | What you do |
+|---|---|---|
+| **PENDING** | Alfred received the invoice and hasn't started processing it yet. | Nothing. Wait. |
+| **IN_PROGRESS** | Alfred is reading and validating the invoice. | Nothing. Check again in a while. |
+| **MANUAL_REVIEW** | Alfred needs a person to review the data. | Claim the task, review the fields and finalise it. See [Review a task](/en/alfred/revisar-tarea). |
+| **FINALIZED** | A person reviewed and closed the task. | Nothing, unless you find a mistake: you can claim it again and correct it. |
+| **FAILED** | Alfred couldn't process the invoice. | Upload the invoice again from [Upload an invoice](/en/alfred/subir-factura). If it fails again, [ask for help](/en/ayuda/soporte). |
+
+<Note>
+  Alfred's English screens show each status as a code, exactly as listed in the table above, instead of a name.
+</Note>
+
+## Which tasks are yours
+
+Tasks in **MANUAL_REVIEW** are the ones that need your work. To claim one, you need the **Operator** role. If you don't have it, ask whoever manages your organisation to assign it.
+
+If someone else already claimed the task, Alfred tells you. See the messages in [Troubleshooting](/en/alfred/problemas).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Review a task" icon="pen-to-square" href="/en/alfred/revisar-tarea">
+    Claim a task and correct the data.
+  </Card>
+  <Card title="Search invoices" icon="magnifying-glass" href="/en/alfred/facturas">
+    Find an invoice that's already processed.
+  </Card>
+</CardGroup>
+
+<NeedHelp />
