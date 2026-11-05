@@ -6,8 +6,43 @@ icon: "folder-open"
 
 import { NecesitasAyuda } from "/snippets/necesitas-ayuda.mdx";
 
-{/* stub */}
+<Note>
+  Este módulo solo aparece si Nesolva lo habilitó para tu organización. Si no ves **Órdenes de compra** en Alfred y lo necesitás, pedile a Nesolva que lo habilite.
+</Note>
 
-Esta página va a explicar: Cómo revisar órdenes de compra, sus documentos y los documentos sin vincular.
+En **Órdenes de compra** reunís los documentos de cada orden y ves qué falta para completarla.
+
+## Buscar una orden
+
+Buscá por el **número completo** de la orden. Cada resultado te muestra si la orden está **Completa** o **Incompleta**.
+
+## Revisar una orden
+
+Al abrir una orden ves:
+
+- una lista de control con los documentos que tiene la orden y lo que falta;
+- los **documentos posibles**, que Alfred cree que podrían pertenecer a la orden;
+- una línea de tiempo y un historial de lo que pasó con la orden.
+
+### Confirmar los documentos posibles
+
+Por cada documento posible, indicá si corresponde:
+
+- **Es de esta orden**: el documento se suma a la orden.
+- **No es de esta orden**: el documento no se suma.
+
+### Subir documentos
+
+Hacé clic en **Subir documentos** para sumar archivos a la orden. Alfred acepta PDF, imágenes, Word, Excel y CSV. Si un archivo es demasiado grande, dividilo o comprimilo.
+
+Si Alfred rechaza un archivo, mirá los mensajes en [Solución de problemas](/es/alfred/problemas).
+
+## Documentos sin vincular
+
+En **Sin vincular** están los documentos que Alfred no pudo asociar con certeza a una orden. Para cada uno podés:
+
+- **Agregar a orden**: elegí la orden a la que pertenece;
+- **Descartar**: lo sacás de la lista. Podés restaurarlo después;
+- aceptar la sugerencia de Alfred, si la hay.
 
 <NecesitasAyuda />
